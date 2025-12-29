@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Portal Corporativo{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Estilos Globales -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- HEADER SIMPLE -->
+        <header class="main-header">
+            <div class="header-content">
+                <div class="brand-area">
+                    <img src="/static/assets/iconSunat.svg" alt="Logo" class="brand-logo">
+                    <!-- <span class="brand-name">Portal</span> Eiminado por solicitud -->
+                </div>
+
+                <div class="user-area">
+                    <div class="user-details">
+                        <span class="user-name">Admin</span>
+                        <span class="user-role">Administrador</span>
+                    </div>
+
+                    <!-- Avatar con onclick -->
+                    <div class="user-avatar" onclick="toggleProfileDropdown()">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+
+                    <!-- Dropdown Content -->
+                    <div id="profileDropdown" class="dropdown-menu">
+                        <a href="#" class="dropdown-item"><i class="fa-solid fa-user-gear"></i> Mi Perfil</a>
+                        <a href="#" class="dropdown-item"><i class="fa-solid fa-wrench"></i> Ajustes</a>
+                        <a href="/login" class="dropdown-item" style="color: var(--accent-red);"><i
+                                class="fa-solid fa-right-from-bracket"></i> Salir</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENEDOR PRINCIPAL -->
+        <main class="main-content-area">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+
+    <!-- Script Inline para Dropdown -->
+    <script>
+        function toggleProfileDropdown() {
+            const dd = document.getElementById('profileDropdown');
+            dd.classList.toggle('show');
+        }
+
+        // Cerrar al hacer click fuera
+        window.addEventListener('click', function (e) {
+            if (!e.target.closest('.user-avatar') && !e.target.closest('.dropdown-menu')) {
+                document.getElementById('profileDropdown').classList.remove('show');
+            }
+        });
+    </script>
+
+    <!-- UNIVERSAL MODAL -->
+    <div id="uiModal" class="uimodal-hidden">
+        <div class="uimodal-box">
+            <div id="uiModalIcon" class="uimodal-icon"></div>
+            <p id="uiModalMsg"></p>
+            <button id="uiModalBtn">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- Scripts Globales -->
+    <script src="/static/js/main.js"></script>
+
+    {% block scripts %}{% endblock %}
+
+</body>
+
+</html>

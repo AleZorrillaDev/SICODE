@@ -1,0 +1,400 @@
+/* --- DOCCHECK MODULE CSS (9 Campos - Compacto) --- */
+
+/* FORZAR SIN SCROLL */
+html,
+body {
+    overflow: hidden !important;
+    height: 100% !important;
+}
+
+/* Override: Header estático */
+.main-header {
+    position: static !important;
+}
+
+/* Wrapper para centrar el container */
+.doc-wrapper {
+    width: 100%;
+    height: calc(100vh - 70px);
+    background: #e4f3ff;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Container principal */
+.container {
+    position: relative;
+    width: 1187px;
+    height: 600px;
+    background: #e4f3ff;
+}
+
+/* Labels verticales - estilo común */
+.label-vertical {
+    position: absolute;
+    background: #0163ac;
+    height: 40px;
+    width: 200px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    text-align: center;
+    z-index: 2;
+}
+
+/* Inputs verticales - estilo común */
+.input-vertical-1,
+.input-vertical-2,
+.input-vertical-3,
+.input-vertical-4,
+.input-vertical-5,
+.input-vertical-6,
+.input-vertical-7,
+.input-vertical-8,
+.input-vertical-9 {
+    position: absolute;
+    height: 40px;
+    width: 941px;
+    background: white;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    padding-left: 170px;
+    padding-right: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    z-index: 1;
+}
+
+/* Campo 1: TIPO DE DOCUMENTO */
+.vertical-1 .label-vertical {
+    left: 96px;
+    top: 116px;
+}
+
+.input-vertical-1 {
+    left: 151px;
+    top: 116px;
+}
+
+/* Campo 2: Nº DE DOCUMENTO */
+.vertical-2 .label-vertical {
+    left: 96px;
+    top: 162px;
+}
+
+.input-vertical-2 {
+    left: 151px;
+    top: 162px;
+}
+
+/* Campo 3: RAZÓN SOCIAL */
+.vertical-3 .label-vertical {
+    left: 96px;
+    top: 208px;
+}
+
+.input-vertical-3 {
+    left: 151px;
+    top: 208px;
+}
+
+/* Campo 4: RUC */
+.vertical-4 .label-vertical {
+    left: 96px;
+    top: 254px;
+}
+
+.input-vertical-4 {
+    left: 151px;
+    top: 254px;
+}
+
+/* Campo 5: FECHA EXTREMA */
+.vertical-5 .label-vertical {
+    left: 96px;
+    top: 300px;
+}
+
+.input-vertical-5 {
+    left: 151px;
+    top: 300px;
+}
+
+/* Campo 6: OBSERVACIONES */
+.vertical-6 .label-vertical {
+    left: 96px;
+    top: 346px;
+}
+
+.input-vertical-6 {
+    left: 151px;
+    top: 346px;
+}
+
+/* Campo 7: X1 (REC) */
+.vertical-7 .label-vertical {
+    left: 96px;
+    top: 392px;
+}
+
+.input-vertical-7 {
+    left: 151px;
+    top: 392px;
+}
+
+/* Campo 8: X2 (RC) */
+.vertical-8 .label-vertical {
+    left: 96px;
+    top: 438px;
+}
+
+.input-vertical-8 {
+    left: 151px;
+    top: 438px;
+}
+
+/* Campo 9: X3 */
+.vertical-9 .label-vertical {
+    left: 96px;
+    top: 484px;
+}
+
+.input-vertical-9 {
+    left: 151px;
+    top: 484px;
+}
+
+
+/* Botones de navegación (Anterior/Siguiente) */
+.btn-nav {
+    position: absolute;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: #ae0d41;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    top: 12px;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.btn-nav:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+.btn-anterior {
+    left: 296px;
+}
+
+.btn-siguiente {
+    left: 776px;
+}
+
+/* Labels superiores */
+.label-registro {
+    position: absolute;
+    background: #0163ac;
+    height: 40px;
+    width: 130px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    text-align: center;
+    left: 536px;
+    top: 15px;
+    z-index: 2;
+}
+
+.input-registro {
+    position: absolute;
+    height: 40px;
+    width: 180px;
+    background: white;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    padding-left: 100px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    left: 580px;
+    top: 15px;
+    z-index: 1;
+}
+
+.label-paquete {
+    position: absolute;
+    background: #0163ac;
+    height: 40px;
+    width: 130px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    text-align: center;
+    left: 296px;
+    top: 65px;
+    z-index: 2;
+}
+
+.input-paquete {
+    position: absolute;
+    height: 40px;
+    width: 180px;
+    background: white;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    padding-left: 100px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    left: 340px;
+    top: 65px;
+    z-index: 1;
+}
+
+.label-caja {
+    position: absolute;
+    background: #0163ac;
+    height: 40px;
+    width: 130px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    text-align: center;
+    left: 536px;
+    top: 65px;
+    z-index: 2;
+}
+
+.input-caja {
+    position: absolute;
+    height: 40px;
+    width: 180px;
+    background: white;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    padding-left: 100px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    left: 580px;
+    top: 65px;
+    z-index: 1;
+}
+
+.label-folios {
+    position: absolute;
+    background: #0163ac;
+    height: 40px;
+    width: 130px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    text-align: center;
+    left: 776px;
+    top: 65px;
+    z-index: 2;
+}
+
+.input-folios {
+    position: absolute;
+    height: 40px;
+    width: 180px;
+    background: white;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    padding-left: 100px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    left: 820px;
+    top: 65px;
+    z-index: 1;
+}
+
+/* Botones */
+.button {
+    position: absolute;
+    height: 40px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: white;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+}
+
+.button:hover {
+    opacity: 0.9;
+}
+
+.consultar {
+    background: #ae0d41;
+    left: 96px;
+    top: 537px;
+    width: 200px;
+}
+
+.exportar-excel {
+    background: #221941;
+    left: 601px;
+    top: 537px;
+    width: 240px;
+}
+
+.exportar-txt {
+    background: #221941;
+    left: 852px;
+    top: 537px;
+    width: 240px;
+}
+
+/* Reset de inputs */
+.container input {
+    box-shadow: none !important;
+}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Consulta de Documentos{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/doccheck.css?v=30">
+{% endblock %}
+
+{% block content %}
+<div class="doc-wrapper">
+    <div class="container">
+
+        <!-- Botones de navegación -->
+        <button class="btn-nav btn-anterior"><i class="fa-solid fa-arrow-left"></i></button>
+
+        <!-- Campos superiores -->
+        <div class="label-registro">Nº DE REGISTRO</div>
+        <input type="text" class="input-registro" value="000123">
+
+        <button class="btn-nav btn-siguiente"><i class="fa-solid fa-arrow-right"></i></button>
+
+        <div class="label-paquete">Nº DE PAQUETE</div>
+        <input type="text" class="input-paquete">
+
+        <div class="label-caja">Nº DE CAJA</div>
+        <input type="text" class="input-caja">
+
+        <div class="label-folios">FOLIOS</div>
+        <input type="text" class="input-folios">
+
+        <!-- Campos verticales -->
+        <div class="vertical-1">
+            <div class="label-vertical">TIPO DE DOCUMENTO</div>
+        </div>
+        <input type="text" class="input-vertical-1">
+
+        <div class="vertical-2">
+            <div class="label-vertical">Nº DE DOCUMENTO</div>
+        </div>
+        <input type="text" class="input-vertical-2">
+
+        <div class="vertical-3">
+            <div class="label-vertical">RAZÓN SOCIAL</div>
+        </div>
+        <input type="text" class="input-vertical-3">
+
+        <div class="vertical-4">
+            <div class="label-vertical">RUC</div>
+        </div>
+        <input type="text" class="input-vertical-4">
+
+        <div class="vertical-5">
+            <div class="label-vertical">FECHA EXTREMA</div>
+        </div>
+        <input type="text" class="input-vertical-5">
+
+        <div class="vertical-6">
+            <div class="label-vertical">OBSERVACIONES</div>
+        </div>
+        <input type="text" class="input-vertical-6">
+
+        <div class="vertical-7">
+            <div class="label-vertical">X1 (REC)</div>
+        </div>
+        <input type="text" class="input-vertical-7">
+
+        <div class="vertical-8">
+            <div class="label-vertical">X2 (RC)</div>
+        </div>
+        <input type="text" class="input-vertical-8">
+
+        <div class="vertical-9">
+            <div class="label-vertical">X3</div>
+        </div>
+        <input type="text" class="input-vertical-9">
+
+        <!-- Botones -->
+        <button class="button consultar">CONSULTAR RUC</button>
+        <button class="button exportar-excel">EXPORTAR EXCEL</button>
+        <button class="button exportar-txt">EXPORTAR TXT</button>
+
+    </div>
+</div>
+{% endblock %}
