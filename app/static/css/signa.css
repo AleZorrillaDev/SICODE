@@ -1,0 +1,285 @@
+/* --- SIGNA MODULE CSS --- */
+
+.signa-page {
+    width: 100%;
+    min-height: calc(100vh - 70px);
+    background-color: #f0fdf4;
+    /* Light green tint */
+    padding: 30px 40px;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Header */
+.signa-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.signa-icon-box {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3);
+}
+
+.signa-title h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #14532d;
+    margin: 0;
+}
+
+.signa-title p {
+    font-size: 14px;
+    color: #166534;
+    margin: 0;
+}
+
+/* Layout */
+.signa-content {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.left-panel {
+    flex: 0 0 350px;
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+}
+
+.right-panel {
+    flex: 1;
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    min-width: 0;
+    /* Fix flex overflow */
+}
+
+/* Input Area */
+.folder-select-area {
+    border: 2px dashed #86efac;
+    background-color: #f0fdf4;
+    border-radius: 15px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+}
+
+.folder-select-area:hover {
+    background-color: #dcfce7;
+    border-color: #22c55e;
+}
+
+.folder-icon {
+    font-size: 48px;
+    color: #16a34a;
+    margin-bottom: 15px;
+}
+
+.folder-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #15803d;
+}
+
+.path-display {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 20px;
+    word-break: break-all;
+    display: none;
+}
+
+.btn-process {
+    width: 100%;
+    background: linear-gradient(90deg, #16a34a, #15803d);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-process:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(22, 163, 74, 0.4);
+}
+
+.btn-process:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Export Buttons */
+.export-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+    display: none;
+    /* hidden initially */
+}
+
+.export-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #14532d;
+    margin-bottom: 15px;
+}
+
+.export-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.btn-export-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: white;
+}
+
+.btn-export-item:hover {
+    background-color: #f0fdf4;
+    border-color: #16a34a;
+}
+
+.btn-export-item i {
+    font-size: 24px;
+}
+
+.btn-export-item span {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+}
+
+.xls-color {
+    color: #16a34a;
+}
+
+.txt-color {
+    color: #2563eb;
+}
+
+/* Table Results */
+.table-container {
+    overflow-x: auto;
+}
+
+.signa-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.signa-table th {
+    text-align: left;
+    padding: 12px 15px;
+    background-color: #f0fdf4;
+    color: #15803d;
+    font-weight: 600;
+    border-bottom: 2px solid #bbf7d0;
+}
+
+.signa-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+}
+
+.signa-table tr:hover td {
+    background-color: #fafafa;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.status-valid {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-warning {
+    background-color: #fef9c3;
+    color: #854d0e;
+}
+
+/* Summary Cards */
+.summary-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.sum-card {
+    background: #f8fafc;
+    padding: 10px 15px;
+    border-radius: 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.sum-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+}
+
+.sum-label {
+    font-size: 12px;
+    color: #64748b;
+}
+
+@media (max-width: 900px) {
+    .left-panel {
+        flex: 100%;
+    }
+}

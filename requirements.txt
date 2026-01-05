@@ -7,3 +7,6 @@ jinja2
 passlib[bcrypt]
 python-multipart
 aiofiles
+pymupdf
+pillow
+openpyxl

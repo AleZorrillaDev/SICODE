@@ -3,82 +3,103 @@
 {% block title %}Consulta de Documentos{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="/static/css/doccheck.css?v=30">
+<link rel="stylesheet" href="/static/css/doccheck.css?v=60">
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/doccheck.js"></script>
 {% endblock %}
 
 {% block content %}
-<div class="doc-wrapper">
-    <div class="container">
+<div class="doc-page">
 
-        <!-- Botones de navegación -->
-        <button class="btn-nav btn-anterior"><i class="fa-solid fa-arrow-left"></i></button>
-
-        <!-- Campos superiores -->
-        <div class="label-registro">Nº DE REGISTRO</div>
-        <input type="text" class="input-registro" value="000123">
-
-        <button class="btn-nav btn-siguiente"><i class="fa-solid fa-arrow-right"></i></button>
-
-        <div class="label-paquete">Nº DE PAQUETE</div>
-        <input type="text" class="input-paquete">
-
-        <div class="label-caja">Nº DE CAJA</div>
-        <input type="text" class="input-caja">
-
-        <div class="label-folios">FOLIOS</div>
-        <input type="text" class="input-folios">
-
-        <!-- Campos verticales -->
-        <div class="vertical-1">
-            <div class="label-vertical">TIPO DE DOCUMENTO</div>
+    <!-- Fila 1: Navegación centrada -->
+    <div class="nav-row">
+        <button class="btn-nav" id="btn-prev"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="field-pill">
+            <span class="pill-label">Nº DE REGISTRO</span>
+            <input type="text" class="pill-input" id="record-idx" value="1">
         </div>
-        <input type="text" class="input-vertical-1">
-
-        <div class="vertical-2">
-            <div class="label-vertical">Nº DE DOCUMENTO</div>
-        </div>
-        <input type="text" class="input-vertical-2">
-
-        <div class="vertical-3">
-            <div class="label-vertical">RAZÓN SOCIAL</div>
-        </div>
-        <input type="text" class="input-vertical-3">
-
-        <div class="vertical-4">
-            <div class="label-vertical">RUC</div>
-        </div>
-        <input type="text" class="input-vertical-4">
-
-        <div class="vertical-5">
-            <div class="label-vertical">FECHA EXTREMA</div>
-        </div>
-        <input type="text" class="input-vertical-5">
-
-        <div class="vertical-6">
-            <div class="label-vertical">OBSERVACIONES</div>
-        </div>
-        <input type="text" class="input-vertical-6">
-
-        <div class="vertical-7">
-            <div class="label-vertical">X1 (REC)</div>
-        </div>
-        <input type="text" class="input-vertical-7">
-
-        <div class="vertical-8">
-            <div class="label-vertical">X2 (RC)</div>
-        </div>
-        <input type="text" class="input-vertical-8">
-
-        <div class="vertical-9">
-            <div class="label-vertical">X3</div>
-        </div>
-        <input type="text" class="input-vertical-9">
-
-        <!-- Botones -->
-        <button class="button consultar">CONSULTAR RUC</button>
-        <button class="button exportar-excel">EXPORTAR EXCEL</button>
-        <button class="button exportar-txt">EXPORTAR TXT</button>
-
+        <button class="btn-nav" id="btn-next"><i class="fa-solid fa-arrow-right"></i></button>
     </div>
+
+    <!-- Fila 2: Botones + Campos pill -->
+    <div class="header-row">
+        <button class="btn-icon" id="btn-upload" title="Cargar Base"><i class="fa-solid fa-folder-open"></i></button>
+        <input type="file" id="file-upload" hidden accept=".xlsx, .xls">
+        <button class="btn-icon" id="btn-save" title="Guardar"><i class="fa-solid fa-floppy-disk"></i></button>
+
+        <div class="field-pill">
+            <span class="pill-label">Nº DE PAQUETE</span>
+            <input type="text" class="pill-input" id="field-paquete">
+        </div>
+        <div class="field-pill">
+            <span class="pill-label">Nº DE CAJA</span>
+            <input type="text" class="pill-input" id="field-caja">
+        </div>
+        <div class="field-pill">
+            <span class="pill-label">FOLIOS</span>
+            <input type="text" class="pill-input" id="field-folios">
+        </div>
+    </div>
+
+    <!-- Campos del Formulario -->
+    <div class="form-section">
+        <div class="field-row">
+            <span class="field-label">TIPO DE DOCUMENTO</span>
+            <input type="text" class="field-input" id="field-tipo-doc">
+        </div>
+        <div class="field-row">
+            <span class="field-label">Nº DE DOCUMENTO</span>
+            <input type="text" class="field-input" id="field-num-doc">
+        </div>
+        <div class="field-row">
+            <span class="field-label">RAZÓN SOCIAL</span>
+            <input type="text" class="field-input" id="field-razon">
+        </div>
+        <div class="field-row">
+            <span class="field-label">RUC</span>
+            <input type="text" class="field-input" id="field-ruc">
+        </div>
+        <div class="field-row">
+            <span class="field-label">FECHA EXTREMA</span>
+            <input type="text" class="field-input" id="field-fecha">
+        </div>
+        <div class="field-row">
+            <span class="field-label">OBSERVACIONES</span>
+            <input type="text" class="field-input" id="field-obs">
+        </div>
+        <div class="field-row">
+            <span class="field-label">X1 (REC)</span>
+            <input type="text" class="field-input" id="field-x1">
+        </div>
+        <div class="field-row">
+            <span class="field-label">X2 (RC)</span>
+            <input type="text" class="field-input" id="field-x2">
+        </div>
+        <div class="field-row">
+            <span class="field-label">X3</span>
+            <input type="text" class="field-input" id="field-x3">
+        </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="action-section">
+        <button class="btn-action btn-consultar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            CONSULTAR RUC
+        </button>
+        <div class="export-group">
+            <button class="btn-action btn-export" id="btn-export-txt">
+                <span class="export-label">TXT</span>
+                <span>EXPORTAR TXT</span>
+            </button>
+            <button class="btn-action btn-export-excel" id="btn-export-excel">
+                <span class="export-label">XLS</span>
+                <span>EXPORTAR EXCEL</span>
+            </button>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

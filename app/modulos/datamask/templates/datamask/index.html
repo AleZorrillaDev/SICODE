@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}DataMask - Editor PDF{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/datamask.css">
+<!-- PDF.js CDN (We might need local if offline, but CDN is good for start) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="datamask-page">
+
+    <!-- Toolbar -->
+    <div class="dm-toolbar">
+        <div class="dm-title">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> DataMask
+        </div>
+
+        <button class="dm-btn" onclick="document.getElementById('fileInput').click()">
+            <i class="fa-solid fa-folder-open"></i> Abrir
+        </button>
+        <input type="file" id="fileInput" accept="application/pdf" style="display: none"
+            onchange="loadPDF(this.files[0])">
+
+        <button class="dm-btn" onclick="savePDF()">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar
+        </button>
+
+        <div class="dm-divider"></div>
+
+        <button class="dm-btn" onclick="undoAction()">
+            <i class="fa-solid fa-rotate-left"></i> Deshacer
+        </button>
+
+        <div class="dm-divider"></div>
+
+        <button class="dm-btn" onclick="changeZoom(0.2)">
+            <i class="fa-solid fa-magnifying-glass-plus"></i>
+        </button>
+        <span id="zoomLabel" style="font-size: 13px; font-weight: 600; min-width: 40px; text-align: center;">100%</span>
+        <button class="dm-btn" onclick="changeZoom(-0.2)">
+            <i class="fa-solid fa-magnifying-glass-minus"></i>
+        </button>
+        <button class="dm-btn" id="btnFitWidth" onclick="toggleFitWidth()">
+            <i class="fa-solid fa-arrows-left-right"></i> Ajustar Ancho
+        </button>
+    </div>
+
+    <!-- Workspace -->
+    <div class="dm-workspace">
+
+        <!-- Sidebar Tools -->
+        <div class="dm-sidebar">
+            <div class="dm-panel-title">Herramientas</div>
+
+            <div class="tool-grid">
+                <div class="tool-item selected" onclick="setTool('ink', this)">
+                    <div class="tool-icon"><i class="fa-solid fa-pen"></i></div>
+                    <span class="tool-name">Dibujar</span>
+                </div>
+                <div class="tool-item" onclick="setTool('highlight', this)">
+                    <div class="tool-icon"><i class="fa-solid fa-highlighter" style="color: #fbbc04;"></i></div>
+                    <span class="tool-name">Resaltar</span>
+                </div>
+                <div class="tool-item" onclick="setTool('strike', this)">
+                    <div class="tool-icon"><i class="fa-solid fa-strikethrough"></i></div>
+                    <span class="tool-name">Tachar</span>
+                </div>
+                <div class="tool-item" onclick="setTool('redact', this)">
+                    <div class="tool-icon"><i class="fa-solid fa-square-full"></i></div>
+                    <span class="tool-name">Censurar</span>
+                </div>
+                <div class="tool-item" onclick="setTool('text', this)">
+                    <div class="tool-icon"><i class="fa-solid fa-font"></i></div>
+                    <span class="tool-name">Texto</span>
+                </div>
+            </div>
+
+            <div class="dm-panel-title">Colores</div>
+            <div class="color-grid">
+                <div class="color-swatch active" style="background-color: #000000;" onclick="setColor('#000000', this)">
+                </div>
+                <div class="color-swatch" style="background-color: #a91e5c;" onclick="setColor('#a91e5c', this)"></div>
+                <!-- CDAPP Red -->
+                <div class="color-swatch" style="background-color: #0066b3;" onclick="setColor('#0066b3', this)"></div>
+                <!-- CDAPP Blue -->
+                <div class="color-swatch" style="background-color: #2d8e5f;" onclick="setColor('#2d8e5f', this)"></div>
+                <!-- Success Green -->
+                <div class="color-swatch" style="background-color: #fbbc04;" onclick="setColor('#fbbc04', this)"></div>
+                <!-- Yellow Highlight -->
+            </div>
+
+            <div class="dm-panel-title" style="margin-top: auto;">Info</div>
+            <p id="pageInfo" style="font-size: 13px; color: #666;">Sin archivo</p>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="dm-canvas-container" id="canvasContainer">
+            <!-- Pages will be injected here -->
+            <div id="placeholderMsg" style="margin-top: 100px; text-align: center; color: #aaa;">
+                <i class="fa-regular fa-file-pdf" style="font-size: 48px; margin-bottom: 20px;"></i>
+                <p>Abre un archivo PDF para comenzar a editar</p>
+            </div>
+        </div>
+
+        <!-- Status Toast -->
+        <div id="statusToast" class="dm-status">Listo ✅</div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // State
+    let currentDoc = null;
+    let fileObj = null; // Store the raw file object
+    let scale = 1.2;
+    let currentTool = "ink";
+    let currentColor = "#000000";
+    let isFitWidth = false;
+    let annotations = {}; // { "0": [], "1": [] } keyed by page index string
+
+    // UI References
+    const container = document.getElementById('canvasContainer');
+    const zoomLabel = document.getElementById('zoomLabel');
+    const statusToast = document.getElementById('statusToast');
+    const placeholder = document.getElementById('placeholderMsg');
+
+    // Tool Handlers
+    function setTool(tool, elem) {
+        currentTool = tool;
+        document.querySelectorAll('.tool-item').forEach(el => el.classList.remove('selected'));
+        elem.classList.add('selected');
+        showStatus(`Herramienta: ${tool}`);
+    }
+
+    function setColor(color, elem) {
+        currentColor = color;
+        document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+        elem.classList.add('active');
+    }
+
+    function showStatus(msg) {
+        statusToast.textContent = msg;
+        statusToast.classList.add('visible');
+        setTimeout(() => statusToast.classList.remove('visible'), 2000);
+    }
+
+    // PDF Loading
+    async function loadPDF(file) {
+        if (!file) return;
+        fileObj = file; // Save for upload
+
+        try {
+            placeholder.style.display = 'none';
+            container.innerHTML = '';
+
+            const arrayBuffer = await file.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+            currentDoc = await loadingTask.promise;
+
+            document.getElementById('pageInfo').textContent = `${currentDoc.numPages} páginas`;
+            annotations = {}; // Reset
+
+            renderAllPages();
+            showStatus(`PDF Cargado: ${file.name}`);
+        } catch (e) {
+            console.error(e);
+            alert("Error al cargar PDF: " + e.message);
+        }
+    }
+
+    async function renderAllPages() {
+        if (!currentDoc) return;
+
+        // Clear container but keep placeholder (hidden) should be fine as we rebuild
+        container.innerHTML = '';
+
+        for (let i = 1; i <= currentDoc.numPages; i++) {
+            await renderPage(i);
+        }
+    }
+
+    async function renderPage(pageNum) {
+        const page = await currentDoc.getPage(pageNum);
+
+        // Calculate Viewport
+        let viewport = page.getViewport({ scale: scale });
+
+        if (isFitWidth) {
+            const containerWidth = container.clientWidth - 60; // Padding
+            const unscaledViewport = page.getViewport({ scale: 1 });
+            const newScale = containerWidth / unscaledViewport.width;
+            viewport = page.getViewport({ scale: newScale });
+            // Update global scale to match first page fit
+            if (pageNum === 1) {
+                scale = newScale;
+                updateZoomLabel();
+            }
+        }
+
+        // Wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pdf-page-wrapper';
+        wrapper.style.width = `${viewport.width}px`;
+        wrapper.style.height = `${viewport.height}px`;
+        wrapper.dataset.pageIndex = pageNum - 1;
+
+        // PDF Canvas
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Render PDF
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        wrapper.appendChild(canvas);
+
+        // Annotation Canvas Layer
+        const annotCanvas = document.createElement('canvas');
+        annotCanvas.className = 'pdf-canvas-layer';
+        annotCanvas.width = viewport.width;
+        annotCanvas.height = viewport.height;
+
+        // Event Listeners for Drawing
+        setupDrawingEvents(annotCanvas, pageNum - 1);
+
+        wrapper.appendChild(annotCanvas);
+        container.appendChild(wrapper);
+    }
+
+    // Zoom Logic
+    function changeZoom(delta) {
+        isFitWidth = false;
+        scale = Math.max(0.4, Math.min(scale + delta, 4.0));
+        updateZoomLabel();
+        renderAllPages();
+    }
+
+    function toggleFitWidth() {
+        isFitWidth = !isFitWidth;
+        document.getElementById('btnFitWidth').classList.toggle('active', isFitWidth);
+        renderAllPages();
+    }
+
+    function updateZoomLabel() {
+        zoomLabel.textContent = `${Math.round(scale * 100)}%`;
+    }
+
+    // Drawing Logic
+    function setupDrawingEvents(canvas, pageIdx) {
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let startX, startY;
+        let points = [];  // For ink tool
+
+        // Helper to get coords relative to canvas
+        const getEx = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            return e.clientX - rect.left;
+        };
+        const getEy = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            return e.clientY - rect.top;
+        };
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (currentTool === 'text') {
+                const x = getEx(e);
+                const y = getEy(e);
+                const text = prompt("Escribe el texto:");
+                if (text) {
+                    // Store normalized
+                    addAnnotation(pageIdx, {
+                        type: 'text',
+                        x: x / canvas.width,
+                        y: y / canvas.height,
+                        text,
+                        color: currentColor
+                    });
+                    redrawAnnotations(canvas, pageIdx);
+                }
+                return;
+            }
+
+            isDrawing = true;
+            startX = getEx(e);
+            startY = getEy(e);
+
+            if (currentTool === 'ink') {
+                points = [{ x: startX, y: startY }];
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const x = getEx(e);
+            const y = getEy(e);
+
+            if (currentTool === 'ink') {
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                points.push({ x, y });
+            } else {
+                redrawAnnotations(canvas, pageIdx);
+
+                ctx.fillStyle = currentColor;
+                ctx.strokeStyle = currentColor;
+
+                if (currentTool === 'highlight') {
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillRect(startX, startY, x - startX, y - startY);
+                    ctx.globalAlpha = 1.0;
+                } else if (currentTool === 'redact') {
+                    ctx.fillStyle = currentColor;
+                    ctx.fillRect(startX, startY, x - startX, y - startY);
+                } else if (currentTool === 'strike') {
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(x, y);
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            const x = getEx(e);
+            const y = getEy(e);
+            const w = canvas.width;
+            const h = canvas.height;
+
+            if (currentTool === 'ink') {
+                // Normalize points
+                const normPoints = points.map(p => ({ x: p.x / w, y: p.y / h }));
+                addAnnotation(pageIdx, { type: 'ink', points: normPoints, color: currentColor });
+            } else if (['highlight', 'redact'].includes(currentTool)) {
+                // Normalize rect
+                addAnnotation(pageIdx, {
+                    type: currentTool,
+                    rect: [Math.min(startX, x) / w, Math.min(startY, y) / h, Math.abs(x - startX) / w, Math.abs(y - startY) / h],
+                    color: currentColor
+                });
+            } else if (currentTool === 'strike') {
+                addAnnotation(pageIdx, {
+                    type: 'strike',
+                    p1: { x: startX / w, y: startY / h },
+                    p2: { x: x / w, y: y / h },
+                    color: currentColor
+                });
+            }
+
+            redrawAnnotations(canvas, pageIdx);
+        });
+
+        setTimeout(() => redrawAnnotations(canvas, pageIdx), 0);
+    }
+
+    function addAnnotation(pageIdx, ann) {
+        const k = String(pageIdx);
+        if (!annotations[k]) annotations[k] = [];
+        annotations[k].push(ann);
+    }
+
+    function redrawAnnotations(canvas, pageIdx) {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const pageAnns = annotations[String(pageIdx)] || [];
+
+        pageAnns.forEach(ann => {
+            ctx.fillStyle = ann.color;
+            ctx.strokeStyle = ann.color;
+
+            if (ann.type === 'highlight') {
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(ann.rect[0] * w, ann.rect[1] * h, ann.rect[2] * w, ann.rect[3] * h);
+                ctx.globalAlpha = 1.0;
+            } else if (ann.type === 'redact') {
+                ctx.fillRect(ann.rect[0] * w, ann.rect[1] * h, ann.rect[2] * w, ann.rect[3] * h);
+            } else if (ann.type === 'strike') {
+                ctx.beginPath();
+                ctx.moveTo(ann.p1.x * w, ann.p1.y * h);
+                ctx.lineTo(ann.p2.x * w, ann.p2.y * h);
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            } else if (ann.type === 'text') {
+                // Adjust font size basic scaling
+                ctx.font = `${16 * scale}px Arial`;
+                ctx.fillText(ann.text, ann.x * w, ann.y * h);
+            } else if (ann.type === 'ink') {
+                ctx.beginPath();
+                if (ann.points.length > 0) {
+                    ctx.moveTo(ann.points[0].x * w, ann.points[0].y * h);
+                    for (let p of ann.points) ctx.lineTo(p.x * w, p.y * h);
+                }
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        });
+    }
+
+    function undoAction() {
+        // Find last modified page
+        const keys = Object.keys(annotations).sort();
+        for (let i = keys.length - 1; i >= 0; i--) {
+            const k = keys[i];
+            if (annotations[k].length > 0) {
+                annotations[k].pop();
+                // Redraw
+                const wrappers = document.querySelectorAll('.pdf-page-wrapper');
+                // wrappers might be indexed via DOM, but we stored pageIndex in dataset
+                wrappers.forEach(wrap => {
+                    if (wrap.dataset.pageIndex === k) {
+                        const cvs = wrap.querySelector('.pdf-canvas-layer');
+                        redrawAnnotations(cvs, parseInt(k));
+                    }
+                });
+                showStatus("Deshacer");
+                return;
+            }
+        }
+    }
+
+    async function savePDF() {
+        if (!fileObj) {
+            alert("No hay archivo cargado");
+            return;
+        }
+
+        showStatus("Procesando PDF...");
+
+        const formData = new FormData();
+        formData.append("file", fileObj);
+        formData.append("annotations", JSON.stringify(annotations));
+
+        try {
+            const resp = await fetch("/datamask/process", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await resp.json();
+            if (result.status === "success") {
+                // Download base64
+                const link = document.createElement('a');
+                link.href = "data:application/pdf;base64," + result.file;
+                link.download = "datamask_editado.pdf";
+                link.click();
+                showStatus("¡Descarga iniciada!");
+            } else {
+                alert("Error: " + (result.error || "Desconocido"));
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error de conexión: " + e.message);
+        }
+    }
+</script>
+{% endblock %}

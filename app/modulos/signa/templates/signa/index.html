@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Signa - Verificador de Firmas{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/signa.css">
+{% endblock %}
+
+{% block content %}
+<div class="signa-page">
+
+    <!-- Header -->
+    <div class="signa-header">
+        <div class="signa-icon-box">
+            <i class="fa-solid fa-file-signature"></i>
+        </div>
+        <div class="signa-title">
+            <h1>Signa</h1>
+            <p>Verificador de Firmas - Resolución Coactiva</p>
+        </div>
+    </div>
+
+    <div class="signa-content">
+
+        <!-- Left Panel: Actions -->
+        <div class="left-panel">
+            <h3 style="font-size: 16px; font-weight: 700; color: #333; margin-bottom: 20px;">
+                <i class="fa-solid fa-folder-open"></i> Origen de Datos
+            </h3>
+
+            <div class="folder-select-area" onclick="selectFolder()">
+                <div class="folder-icon"><i class="fa-solid fa-folder-plus"></i></div>
+                <div class="folder-text">SELECCIONA CARPETA</div>
+            </div>
+
+            <div id="pathDisplay" class="path-display">
+                <i class="fa-solid fa-folder" style="margin-right: 5px;"></i> <span id="pathText"></span>
+            </div>
+
+            <button id="verifyBtn" class="btn-process" onclick="runVerification()" disabled>
+                <i class="fa-solid fa-magnifying-glass"></i> VERIFICAR
+            </button>
+
+            <!-- Export Area (Hidden initially) -->
+            <div id="exportSection" class="export-section">
+                <div class="export-title">EXPORTAR RESULTADOS</div>
+                <div class="export-grid">
+                    <div class="btn-export-item" onclick="alert('Descargando Excel...')">
+                        <i class="fa-solid fa-file-excel xls-color"></i>
+                        <span>Excel</span>
+                    </div>
+                    <div class="btn-export-item" onclick="alert('Descargando TXT...')">
+                        <i class="fa-regular fa-file-lines txt-color"></i>
+                        <span>TXT</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Results -->
+        <div class="right-panel">
+
+            <!-- Summary -->
+            <div class="summary-bar">
+                <div class="sum-card">
+                    <span class="sum-val" id="totalCount">0</span>
+                    <span class="sum-label">Total Archivos</span>
+                </div>
+                <div class="sum-card">
+                    <span class="sum-val" id="validCount" style="color: #16a34a;">0</span>
+                    <span class="sum-label">Válidos</span>
+                </div>
+                <div class="sum-card">
+                    <span class="sum-val" id="errorCount" style="color: #dc2626;">0</span>
+                    <span class="sum-label">Observados</span>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <table class="signa-table">
+                    <thead>
+                        <tr>
+                            <th>Archivo</th>
+                            <th>Expediente</th>
+                            <th>RUC</th>
+                            <th>Firmante</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        <!-- Rows injected via JS -->
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                                <i class="fa-regular fa-folder-open"
+                                    style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
+                                Selecciona una carpeta y haz clic en Verificar
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let selectedPath = "";
+
+    function selectFolder() {
+        // En un entorno web real no podemos obtener path completo por seguridad, 
+        // pero simularemos la selección.
+        // Simulamos un delay y asignamos random path
+        const mockPaths = [
+            "C:/Users/Admin/Documents/Coactiva/Lote_Enero_2025",
+            "D:/SUNAT/Resoluciones/Pendientes",
+            "Z:/Compartido/Cobranza/Verificacion2"
+        ];
+
+        selectedPath = mockPaths[Math.floor(Math.random() * mockPaths.length)];
+
+        document.getElementById('pathText').innerText = selectedPath;
+        document.getElementById('pathDisplay').style.display = 'block';
+        document.getElementById('verifyBtn').disabled = false;
+
+        // Reset UI
+        document.getElementById('exportSection').style.display = 'none';
+        document.getElementById('resultsTableBody').innerHTML = `
+            <tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                <i class="fa-solid fa-clock-rotate-left" style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
+                Listo para verificar
+            </td></tr>
+        `;
+        resetCounters();
+    }
+
+    function resetCounters() {
+        document.getElementById('totalCount').innerText = "0";
+        document.getElementById('validCount').innerText = "0";
+        document.getElementById('errorCount').innerText = "0";
+    }
+
+    async function runVerification() {
+        if (!selectedPath) return;
+
+        const btn = document.getElementById('verifyBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> PROCESANDO...';
+
+        const formData = new FormData();
+        formData.append("folder_path", selectedPath);
+
+        try {
+            const resp = await fetch("/signa/verify", {
+                method: "POST",
+                body: formData
+            });
+            const result = await resp.json();
+
+            if (result.status === "success") {
+                renderResults(result.data);
+                updateSummary(result.summary);
+                document.getElementById('exportSection').style.display = 'block';
+                // Trigger success message/toast if available
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert("Error en verificación");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> VERIFICAR';
+        }
+    }
+
+    function renderResults(data) {
+        const tbody = document.getElementById('resultsTableBody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No se encontraron archivos</td></tr>';
+            return;
+        }
+
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+
+            // Determine badge class
+            let badgeClass = "status-warning";
+            let icon = "";
+            if (item.valid) {
+                badgeClass = "status-valid";
+                icon = '<i class="fa-solid fa-check" style="margin-right:5px"></i>';
+            } else if (item.status === 'Sin Firma') {
+                badgeClass = "status-error";
+                icon = '<i class="fa-solid fa-xmark" style="margin-right:5px"></i>';
+            }
+
+            tr.innerHTML = `
+                <td>
+                    <div style="display:flex; align-items:center;">
+                        <i class="fa-solid fa-file-pdf" style="color: #dc2626; margin-right: 8px;"></i>
+                        <span style="font-weight: 500;">${item.filename}</span>
+                    </div>
+                </td>
+                <td>${item.expediente}</td>
+                <td>${item.ruc}</td>
+                <td style="font-family: monospace;">${item.firmante}</td>
+                <td><span class="status-badge ${badgeClass}">${icon}${item.status}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateSummary(summary) {
+        document.getElementById('totalCount').innerText = summary.total;
+        document.getElementById('validCount').innerText = summary.valid;
+        document.getElementById('errorCount').innerText = summary.error;
+    }
+</script>
+{% endblock %}

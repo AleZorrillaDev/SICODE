@@ -1,196 +1,86 @@
-/* --- DOCCHECK MODULE CSS (9 Campos - Compacto) --- */
+/* --- DOCCHECK MODULE CSS (Diseño según mockup) --- */
 
-/* FORZAR SIN SCROLL */
-html,
-body {
-    overflow: hidden !important;
-    height: 100% !important;
+/* Override: Mantener scrollbar espacio consistente */
+html {
+    scrollbar-gutter: stable;
 }
 
-/* Override: Header estático */
-.main-header {
-    position: static !important;
+/* Override: Anular margin/padding del contenedor principal */
+.main-content-area {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
 }
 
-/* Wrapper para centrar el container */
-.doc-wrapper {
+/* Página principal - SIN SCROLL en desktop */
+.doc-page {
     width: 100%;
     height: calc(100vh - 70px);
     background: #e4f3ff;
+    padding: 15px 40px 20px;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
     overflow: hidden;
 }
 
-/* Container principal */
-.container {
-    position: relative;
-    width: 1187px;
-    height: 600px;
-    background: #e4f3ff;
-}
-
-/* Labels verticales - estilo común */
-.label-vertical {
-    position: absolute;
-    background: #0163ac;
-    height: 40px;
-    width: 200px;
-    border-radius: 100px;
+/* ===== FILA 1: NAVEGACIÓN CENTRADA ===== */
+.nav-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    color: white;
-    text-align: center;
-    z-index: 2;
+    gap: 15px;
 }
 
-/* Inputs verticales - estilo común */
-.input-vertical-1,
-.input-vertical-2,
-.input-vertical-3,
-.input-vertical-4,
-.input-vertical-5,
-.input-vertical-6,
-.input-vertical-7,
-.input-vertical-8,
-.input-vertical-9 {
-    position: absolute;
-    height: 40px;
-    width: 941px;
-    background: white;
-    border-radius: 8px;
-    border: none;
-    outline: none;
-    padding-left: 170px;
-    padding-right: 20px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    z-index: 1;
+/* ===== FILA 2: BOTONES + CAMPOS PILL ===== */
+.header-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 1000px;
 }
 
-/* Campo 1: TIPO DE DOCUMENTO */
-.vertical-1 .label-vertical {
-    left: 96px;
-    top: 116px;
-}
-
-.input-vertical-1 {
-    left: 151px;
-    top: 116px;
-}
-
-/* Campo 2: Nº DE DOCUMENTO */
-.vertical-2 .label-vertical {
-    left: 96px;
-    top: 162px;
-}
-
-.input-vertical-2 {
-    left: 151px;
-    top: 162px;
-}
-
-/* Campo 3: RAZÓN SOCIAL */
-.vertical-3 .label-vertical {
-    left: 96px;
-    top: 208px;
-}
-
-.input-vertical-3 {
-    left: 151px;
-    top: 208px;
-}
-
-/* Campo 4: RUC */
-.vertical-4 .label-vertical {
-    left: 96px;
-    top: 254px;
-}
-
-.input-vertical-4 {
-    left: 151px;
-    top: 254px;
-}
-
-/* Campo 5: FECHA EXTREMA */
-.vertical-5 .label-vertical {
-    left: 96px;
-    top: 300px;
-}
-
-.input-vertical-5 {
-    left: 151px;
-    top: 300px;
-}
-
-/* Campo 6: OBSERVACIONES */
-.vertical-6 .label-vertical {
-    left: 96px;
-    top: 346px;
-}
-
-.input-vertical-6 {
-    left: 151px;
-    top: 346px;
-}
-
-/* Campo 7: X1 (REC) */
-.vertical-7 .label-vertical {
-    left: 96px;
-    top: 392px;
-}
-
-.input-vertical-7 {
-    left: 151px;
-    top: 392px;
-}
-
-/* Campo 8: X2 (RC) */
-.vertical-8 .label-vertical {
-    left: 96px;
-    top: 438px;
-}
-
-.input-vertical-8 {
-    left: 151px;
-    top: 438px;
-}
-
-/* Campo 9: X3 */
-.vertical-9 .label-vertical {
-    left: 96px;
-    top: 484px;
-}
-
-.input-vertical-9 {
-    left: 151px;
-    top: 484px;
-}
-
-
-/* Botones de navegación (Anterior/Siguiente) */
-.btn-nav {
-    position: absolute;
+/* Botón icono (upload, save) */
+.btn-icon {
     width: 45px;
     height: 45px;
-    border-radius: 50%;
+    border-radius: 12px;
     background: #ae0d41;
     color: white;
     border: none;
     cursor: pointer;
+    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    top: 12px;
     transition: transform 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-icon:hover {
+    opacity: 0.85;
+    transform: scale(1.05);
+}
+
+/* Botón navegación (prev/next) */
+.btn-nav {
+    width: 45px;
+    height: 45px;
+    border-radius: 14px;
+    background: #ae0d41;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, opacity 0.2s;
+    flex-shrink: 0;
 }
 
 .btn-nav:hover {
@@ -198,203 +88,463 @@ body {
     transform: scale(1.05);
 }
 
-.btn-anterior {
-    left: 296px;
-}
-
-.btn-siguiente {
-    left: 776px;
-}
-
-/* Labels superiores */
-.label-registro {
-    position: absolute;
-    background: #0163ac;
-    height: 40px;
-    width: 130px;
-    border-radius: 100px;
+/* ===== CAMPOS CON PILL (Label superpuesto) ===== */
+.field-pill {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 10px;
+    position: relative;
+}
+
+.pill-label {
+    background: #0163ac;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 100px;
     font-family: 'Poppins', sans-serif;
     font-weight: 700;
-    font-size: 14px;
-    color: white;
-    text-align: center;
-    left: 536px;
-    top: 15px;
+    font-size: 12px;
+    white-space: nowrap;
     z-index: 2;
 }
 
-.input-registro {
-    position: absolute;
+.pill-input {
     height: 40px;
-    width: 180px;
-    background: white;
-    border-radius: 8px;
+    width: 100px;
+    background: #ffffff;
     border: none;
-    outline: none;
-    padding-left: 100px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    left: 580px;
-    top: 15px;
-    z-index: 1;
-}
-
-.label-paquete {
-    position: absolute;
-    background: #0163ac;
-    height: 40px;
-    width: 130px;
     border-radius: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
+    padding: 0 15px 0 20px;
+    margin-left: -15px;
     font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    color: white;
-    text-align: center;
-    left: 296px;
-    top: 65px;
-    z-index: 2;
-}
-
-.input-paquete {
-    position: absolute;
-    height: 40px;
-    width: 180px;
-    background: white;
-    border-radius: 8px;
-    border: none;
-    outline: none;
-    padding-left: 100px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    left: 340px;
-    top: 65px;
-    z-index: 1;
-}
-
-.label-caja {
-    position: absolute;
-    background: #0163ac;
-    height: 40px;
-    width: 130px;
-    border-radius: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    color: white;
-    text-align: center;
-    left: 536px;
-    top: 65px;
-    z-index: 2;
-}
-
-.input-caja {
-    position: absolute;
-    height: 40px;
-    width: 180px;
-    background: white;
-    border-radius: 8px;
-    border: none;
-    outline: none;
-    padding-left: 100px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    left: 580px;
-    top: 65px;
-    z-index: 1;
-}
-
-.label-folios {
-    position: absolute;
-    background: #0163ac;
-    height: 40px;
-    width: 130px;
-    border-radius: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    color: white;
-    text-align: center;
-    left: 776px;
-    top: 65px;
-    z-index: 2;
-}
-
-.input-folios {
-    position: absolute;
-    height: 40px;
-    width: 180px;
-    background: white;
-    border-radius: 8px;
-    border: none;
-    outline: none;
-    padding-left: 100px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    left: 820px;
-    top: 65px;
-    z-index: 1;
-}
-
-/* Botones */
-.button {
-    position: absolute;
-    height: 40px;
-    border-radius: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 700;
     font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    z-index: 1;
+    color: #1e3a5f;
+}
+
+/* ===== SECCIÓN DE FORMULARIO ===== */
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: 1000px;
+}
+
+.field-row {
+    display: flex;
+    align-items: center;
+}
+
+.field-label {
+    background: #0163ac;
     color: white;
-    cursor: pointer;
+    padding: 10px 22px;
+    border-radius: 100px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    white-space: nowrap;
+    min-width: 180px;
+    text-align: center;
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.field-input {
+    flex: 1;
+    height: 38px;
+    background: #ffffff;
     border: none;
-    transition: opacity 0.2s;
-}
-
-.button:hover {
-    opacity: 0.9;
-}
-
-.consultar {
-    background: #ae0d41;
-    left: 96px;
-    top: 537px;
-    width: 200px;
-}
-
-.exportar-excel {
-    background: #221941;
-    left: 601px;
-    top: 537px;
-    width: 240px;
-}
-
-.exportar-txt {
-    background: #221941;
-    left: 852px;
-    top: 537px;
-    width: 240px;
+    border-radius: 100px;
+    padding: 0 20px 0 30px;
+    margin-left: -20px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    z-index: 1;
+    color: #1e3a5f;
 }
 
 /* Reset de inputs */
-.container input {
+.doc-page input {
     box-shadow: none !important;
+    border: none !important;
+}
+
+.doc-page input::placeholder {
+    color: #7ba3c7;
+}
+
+/* ===== SECCIÓN DE ACCIONES ===== */
+.action-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.btn-action {
+    height: 45px;
+    padding: 0 25px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-consultar {
+    background: #ae0d41;
+}
+
+.export-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Botones Exportar - Estilo bpsearch */
+.btn-export,
+.btn-export-excel {
+    border: none !important;
+    padding: 0 20px;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.btn-export:hover,
+.btn-export-excel:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.export-label {
+    background-color: white;
+    border-radius: 50px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* TXT - Azul */
+.btn-export {
+    background-color: #0066b3;
+    color: white;
+}
+
+.btn-export .export-label {
+    color: #0066b3;
+}
+
+/* Excel - Verde */
+.btn-export-excel {
+    background-color: #2d8e5f;
+    color: white;
+}
+
+.btn-export-excel .export-label {
+    color: #2d8e5f;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablets */
+@media (max-width: 992px) {
+    .doc-page {
+        padding: 12px 20px;
+        height: auto;
+        min-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+
+    .header-row {
+        gap: 12px;
+    }
+
+    .btn-icon,
+    .btn-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .field-label {
+        min-width: 150px;
+        font-size: 11px;
+        padding: 8px 15px;
+    }
+
+    .pill-label {
+        font-size: 10px;
+        padding: 8px 14px;
+    }
+
+    .btn-action {
+        padding: 0 18px;
+        font-size: 12px;
+        height: 42px;
+    }
+}
+
+/* Móviles */
+@media (max-width: 768px) {
+    .doc-page {
+        padding: 10px 15px;
+        gap: 8px;
+        height: auto;
+        min-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+
+    .nav-row {
+        gap: 10px;
+    }
+
+    .header-row {
+        gap: 10px;
+    }
+
+    .btn-icon,
+    .btn-nav {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+        border-radius: 14px;
+    }
+
+    .field-label {
+        min-width: 120px;
+        font-size: 10px;
+        padding: 7px 12px;
+    }
+
+    .field-input {
+        height: 34px;
+        padding: 0 12px 0 22px;
+    }
+
+    .pill-label {
+        font-size: 9px;
+        padding: 7px 12px;
+    }
+
+    .pill-input {
+        height: 34px;
+        width: 70px;
+        font-size: 11px;
+    }
+
+    .action-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .export-group {
+        flex-direction: column;
+    }
+
+    .btn-action {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+    .field-label {
+        min-width: 100px;
+        font-size: 9px;
+        padding: 6px 10px;
+    }
+
+    .field-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .field-input {
+        margin-left: 0;
+        margin-top: -8px;
+        border-radius: 12px;
+        padding: 0 12px;
+    }
+
+    .field-label {
+        border-radius: 12px 12px 0 0;
+        text-align: left;
+        padding-left: 15px;
+    }
+}
+
+/* ===== MODAL DE EXPORTACIÓN ===== */
+.export-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.export-modal {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.2s ease-out;
+}
+
+.export-modal h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0163ac;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.export-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: #f0f7ff;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.export-option:hover {
+    background: #e0efff;
+}
+
+.export-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #0163ac;
+}
+
+.export-option span {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.export-option input[type="text"] {
+    flex: 1;
+    height: 36px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.export-option input[type="text"]:focus {
+    border-color: #0163ac;
+}
+
+.export-option input[type="text"]:disabled {
+    background: #f5f5f5;
+    color: #999;
+}
+
+.export-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-export-cancel {
+    padding: 12px 25px;
+    border-radius: 50px;
+    border: 2px solid #ccc;
+    background: white;
+    color: #666;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-export-cancel:hover {
+    border-color: #999;
+    color: #333;
+}
+
+.btn-export-confirm {
+    padding: 12px 30px;
+    border-radius: 50px;
+    border: none;
+    background: #0163ac;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-export-confirm:hover {
+    background: #014f88;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }

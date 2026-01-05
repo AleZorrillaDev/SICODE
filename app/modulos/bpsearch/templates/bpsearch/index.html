@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Boletín El Peruano{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/bpsearch.css?v=3">
+{% endblock %}
+
+{% block content %}
+<div class="bp-page">
+    <!-- Header del módulo -->
+    <div class="bp-header">
+        <div class="user-icon">
+            <i class="fa-solid fa-user"></i>
+        </div>
+        <h1>REVISIÓN BOLETÍN EL PERUANO</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="left-section">
+            <!-- Seleccionar Carpeta Button -->
+            <button class="btn-carpeta">
+                Seleccionar Carpeta
+                <div class="icon-circle">
+                    <i class="fa-solid fa-folder"></i>
+                </div>
+            </button>
+
+            <!-- Filtrar and Search Buttons -->
+            <div class="filter-controls">
+                <button class="btn-filtrar">FILTRAR</button>
+                <button class="btn-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+            <!-- Filter Pills -->
+            <div class="filter-pills">
+                <div class="pill">
+                    Semanas/Meses
+                    <button class="pill-close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="pill">
+                    Años
+                    <button class="pill-close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="export-section">
+                <h2>SELECCIONE QUE EXPORTAR</h2>
+
+                <div class="export-buttons">
+                    <!-- Exportar en PDF -->
+                    <button class="btn-export btn-pdf">
+                        <div class="export-label">PDF</div>
+                        <span>Exportar en PDF</span>
+                    </button>
+
+                    <!-- Exportar en Excel -->
+                    <button class="btn-export btn-excel">
+                        <div class="export-label">XLS</div>
+                        <span>Exportar en Excel</span>
+                    </button>
+
+                    <!-- Exportar en Txt -->
+                    <button class="btn-export btn-txt">
+                        <div class="export-label">TXT</div>
+                        <span>Exportar en Txt</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side -->
+        <div class="right-section">
+            <!-- Barra de progreso -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-label">
+                    <span id="progressText">Esperando archivos...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                </div>
+            </div>
+            <textarea class="textarea-field" placeholder="Resultados aparecerán aquí..." readonly></textarea>
+        </div>
+    </div>
+</div>
+{% endblock %}

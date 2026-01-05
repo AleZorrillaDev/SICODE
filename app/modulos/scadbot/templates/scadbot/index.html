@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}SCADbot - Verificación Automática{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/scadbot.css">
+{% endblock %}
+
+{% block content %}
+<div class="scad-page">
+
+    <!-- Title Section -->
+    <div class="scad-header">
+        <div class="scad-icon">
+            <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="scad-title">
+            <h1>SCADbot</h1>
+            <p>Automatización y verificación de carga de imágenes SCAD</p>
+        </div>
+    </div>
+
+    <div class="scad-grid">
+
+        <!-- Left Panel: Controls -->
+        <div class="scad-panel">
+            <div class="panel-title">
+                <i class="fa-solid fa-sliders"></i> Configuración
+            </div>
+
+            <form id="verifyForm" onsubmit="runVerification(event)">
+                <div class="control-group">
+                    <label class="control-label">Periodo</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select name="month" class="scad-select" required>
+                            <option value="" disabled selected>Mes</option>
+                            <option value="Enero">Enero</option>
+                            <option value="Febrero">Febrero</option>
+                            <option value="Marzo">Marzo</option>
+                            <option value="Abril">Abril</option>
+                            <option value="Mayo">Mayo</option>
+                            <option value="Junio">Junio</option>
+                            <option value="Julio">Julio</option>
+                            <option value="Agosto">Agosto</option>
+                            <option value="Septiembre">Septiembre</option>
+                            <option value="Octubre">Octubre</option>
+                            <option value="Noviembre">Noviembre</option>
+                            <option value="Diciembre">Diciembre</option>
+                        </select>
+                        <select name="year" class="scad-select" required>
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Carga de Data</label>
+                    <div class="btn-upload-area" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                        <div class="upload-text" id="fileLabel">Haz clic para subir archivo</div>
+                        <input type="file" id="fileInput" name="datafile" style="display: none"
+                            onchange="updateFileLabel(this)">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-verify" id="verifyBtn">
+                    <i class="fa-solid fa-bolt"></i> Verificar Carpetas
+                </button>
+            </form>
+
+            <div class="downloads-panel" id="dlPanel" style="display: none; flex-direction: column; margin-top: 30px;">
+                <div class="panel-title" style="font-size: 16px;">Descargas</div>
+
+                <div class="download-card" onclick="downloadFile('pendientes')">
+                    <div class="dl-icon"><i class="fa-solid fa-file-csv"></i></div>
+                    <div class="dl-info">
+                        <h4>Pendientes</h4>
+                        <span>pendientes.txt</span>
+                    </div>
+                    <i class="fa-solid fa-download" style="color: #999; margin-left: auto;"></i>
+                </div>
+
+                <div class="download-card" onclick="downloadFile('observaciones')">
+                    <div class="dl-icon" style="color: #e53935; background-color: #ffebee;"><i
+                            class="fa-solid fa-file-circle-exclamation"></i></div>
+                    <div class="dl-info">
+                        <h4>Observaciones</h4>
+                        <span>observaciones.txt</span>
+                    </div>
+                    <i class="fa-solid fa-download" style="color: #999; margin-left: auto;"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Output Terminal -->
+        <div class="scad-panel" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <span style="font-weight: 600;">Terminal de Ejecución</span>
+                    <div class="terminal-dots">
+                        <div class="dot dot-red"></div>
+                        <div class="dot dot-yellow"></div>
+                        <div class="dot dot-green"></div>
+                    </div>
+                </div>
+                <div class="terminal-content" id="consoleOutput">
+                    <div class="log-line">
+                        <span class="log-time">[SYSTEM]</span>
+                        <span class="log-msg info">Esperando comando... Listo para verificar.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateFileLabel(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('fileLabel').textContent = input.files[0].name;
+            document.querySelector('.btn-upload-area').style.borderColor = '#3f51b5';
+            document.querySelector('.btn-upload-area').style.backgroundColor = '#e8eaf6';
+        }
+    }
+
+    function log(msg, type = 'info') {
+        const consoleDiv = document.getElementById('consoleOutput');
+        const now = new Date().toLocaleTimeString();
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.innerHTML = `<span class="log-time">[${now}]</span><span class="log-msg ${type}">${msg}</span>`;
+        consoleDiv.appendChild(line);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    async function runVerification(e) {
+        e.preventDefault();
+        const btn = document.getElementById('verifyBtn');
+        const form = document.getElementById('verifyForm');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Procesando...';
+
+        document.getElementById('consoleOutput').innerHTML = ''; // Clear log
+        log("Iniciando verificación...", 'info');
+
+        const formData = new FormData(form);
+
+        try {
+            // Mock simulation just for visual effect before real fetch if needed, 
+            // but we will call the mock backend we created.
+            const response = await fetch('/scadbot/verify', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                log(`Procesando ${result.summary.total} registros...`, 'info');
+
+                // Simulate line by line output for effect
+                for (const item of result.data) {
+                    await new Promise(r => setTimeout(r, 50)); // tiny delay for effect
+                    const safeMsg = item.message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const type = item.status === 'ok' ? 'success' : 'error';
+                    log(safeMsg, type);
+                }
+
+                log("----------------------------------------", 'info');
+                log(`PROCESO COMPLETADO. Total: ${result.summary.total} | OK: ${result.summary.ok} | Errores: ${result.summary.errors}`, 'info');
+
+                document.getElementById('dlPanel').style.display = 'flex';
+            }
+
+        } catch (err) {
+            log("Error de conexión: " + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Verificar Carpetas';
+        }
+    }
+
+    function downloadFile(type) {
+        // Mock download
+        alert("Descargando archivo " + type + ".txt ...");
+    }
+</script>
+{% endblock %}

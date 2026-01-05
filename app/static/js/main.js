@@ -180,4 +180,21 @@ const app = {
 // Inicializar al cargar
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
+
+    // Modal global - cerrar al hacer clic en Aceptar
+    const uiModalBtn = document.getElementById('uiModalBtn');
+    const uiModal = document.getElementById('uiModal');
+
+    if (uiModalBtn && uiModal) {
+        uiModalBtn.addEventListener('click', () => {
+            uiModal.classList.add('uimodal-hidden');
+        });
+
+        // También cerrar al hacer clic fuera del modal
+        uiModal.addEventListener('click', (e) => {
+            if (e.target === uiModal) {
+                uiModal.classList.add('uimodal-hidden');
+            }
+        });
+    }
 });
