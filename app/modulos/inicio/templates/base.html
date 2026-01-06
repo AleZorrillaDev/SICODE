@@ -29,10 +29,22 @@
         <header class="main-header">
             <div class="header-content">
                 <div class="brand-area">
+                    <!-- Flecha retorno inicio -->
+                    {% block back_button %}
+                    <a href="/"
+                        style="margin-right: 15px; color: #555; font-size: 20px; display: flex; align-items: center; text-decoration: none;"
+                        title="Volver al Inicio">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    {% endblock %}
+
                     <a href="/" style="text-decoration: none; display: flex; align-items: center;">
                         <img src="/static/assets/iconSunat.svg" alt="Logo" class="brand-logo">
                     </a>
                     <!-- <span class="brand-name">Portal</span> Eiminado por solicitud -->
+
+                    <!-- Título del módulo (opcional) -->
+                    {% block module_title %}{% endblock %}
                 </div>
 
                 <div class="user-area">

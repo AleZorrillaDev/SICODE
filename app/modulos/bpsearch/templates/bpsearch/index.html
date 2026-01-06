@@ -3,73 +3,121 @@
 {% block title %}Boletín El Peruano{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="/static/css/bpsearch.css?v=3">
+<link rel="stylesheet" href="/static/css/bpsearch.css?v=11">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">BpSearch</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Revisión Boletín El Peruano</span>
+</div>
 {% endblock %}
 
 {% block content %}
 <div class="bp-page">
-    <!-- Header del módulo -->
-    <div class="bp-header">
-        <div class="user-icon">
-            <i class="fa-solid fa-user"></i>
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+    <!-- Modal para seleccionar carpeta -->
+    <div class="folder-modal-overlay" id="folder-modal" style="display: none;">
+        <div class="folder-modal">
+            <div class="folder-modal-header">
+                <h3><i class="fa-solid fa-folder-tree"></i> Seleccionar Carpeta</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="folder-modal-path">
+                <input type="text" id="folder-path-input" placeholder="Escribe la ruta o navega...">
+                <button class="btn-go" id="btn-go-path"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+            <div class="folder-list" id="folder-list">
+                <!-- Carpetas se cargarán aquí -->
+            </div>
+            <div class="folder-modal-footer">
+                <button class="btn-secondary" id="btn-cancel-folder">Cancelar</button>
+                <button class="btn-primary" id="btn-confirm-folder">Seleccionar</button>
+            </div>
         </div>
-        <h1>REVISIÓN BOLETÍN EL PERUANO</h1>
     </div>
+
+    <!-- Header del módulo eliminado para consistencia con DocCheck (usando bloque module_title) -->
 
     <!-- Main Content -->
     <div class="main-content">
         <div class="left-section">
             <!-- Seleccionar Carpeta Button -->
-            <button class="btn-carpeta">
+            <button class="btn-carpeta" id="btn-select-folder">
                 Seleccionar Carpeta
                 <div class="icon-circle">
                     <i class="fa-solid fa-folder"></i>
                 </div>
             </button>
+            <!-- Folder Info Display (Necesario para saber si se seleccionó) -->
+            <div id="folder-display" style="display:none; margin-bottom: 5px; padding-left: 10px;">
+                <small id="folder-path" style="font-size: 11px; font-weight:600; color: #0066b3;">...</small>
+            </div>
 
             <!-- Filtrar and Search Buttons -->
             <div class="filter-controls">
-                <button class="btn-filtrar">FILTRAR</button>
-                <button class="btn-search">
+                <!-- Search Box (User's Design Implementation) -->
+                <div class="search-box">
+                    <div class="search-label">FILTRAR</div>
+                    <input type="text" id="search-input" class="search-input-real" placeholder="Escribe tu búsqueda...">
+                </div>
+
+                <button class="btn-search" id="btn-search">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </div>
 
             <!-- Filter Pills -->
             <div class="filter-pills">
-                <div class="pill">
+                <div class="pill active" id="pill-actual" onclick="selectSearchMode('actual')">
                     Semanas/Meses
-                    <button class="pill-close">
-                        <i class="fa-solid fa-xmark"></i>
+                    <button class="pill-check-btn" style="background:none; border:none; color:inherit;">
+                        <i class="fa-solid fa-check" style="display: inline;"></i>
                     </button>
                 </div>
-                <div class="pill">
+                <div class="pill" id="pill-subcarpetas" onclick="selectSearchMode('subcarpetas')">
                     Años
-                    <button class="pill-close">
-                        <i class="fa-solid fa-xmark"></i>
+                    <button class="pill-check-btn" style="background:none; border:none; color:inherit;">
+                        <i class="fa-solid fa-check" style="display: none;"></i>
                     </button>
                 </div>
             </div>
 
+            <!-- Opciones extra ocultas pero funcionales -->
+            <div style="margin-bottom: 20px;">
+                <label
+                    style="font-size: 13px; color: #555; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" id="chk-ignorar-historial"> Ignorar historial
+                </label>
+                <a href="#" id="btn-clear-history"
+                    style="font-size: 12px; color: #a91e5c; text-decoration: none; margin-left: 20px;">
+                    Borrar historial
+                </a>
+            </div>
+
             <!-- Export Section -->
-            <div class="export-section">
+            <div class="export-section" id="export-section" style="display: none;">
+                <!-- Oculto hasta tener resultados -->
                 <h2>SELECCIONE QUE EXPORTAR</h2>
 
                 <div class="export-buttons">
                     <!-- Exportar en PDF -->
-                    <button class="btn-export btn-pdf">
+                    <button class="btn-export btn-pdf" id="btn-export-pdf">
                         <div class="export-label">PDF</div>
                         <span>Exportar en PDF</span>
                     </button>
 
                     <!-- Exportar en Excel -->
-                    <button class="btn-export btn-excel">
+                    <button class="btn-export btn-excel" id="btn-export-excel">
                         <div class="export-label">XLS</div>
                         <span>Exportar en Excel</span>
                     </button>
 
                     <!-- Exportar en Txt -->
-                    <button class="btn-export btn-txt">
+                    <button class="btn-export btn-txt" id="btn-export-txt">
                         <div class="export-label">TXT</div>
                         <span>Exportar en Txt</span>
                     </button>
@@ -88,9 +136,47 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
                 </div>
+                <!-- Detalles extra ocultos visualmente pero usados por JS -->
+                <span id="progress-files" style="display:none">0/0</span>
+                <span id="progress-time" style="display:none">0s</span>
             </div>
-            <textarea class="textarea-field" placeholder="Resultados aparecerán aquí..." readonly></textarea>
+
+            <!-- Controls (Pause/Cancel) -->
+            <div id="search-controls" style="display: none; gap: 5px; margin-bottom: 5px; margin-top:5px;">
+                <button id="btn-pause" style="flex:1; padding: 2px; font-size: 11px; cursor: pointer;">Pausar</button>
+                <button id="btn-cancel"
+                    style="flex:1; padding: 2px; font-size: 11px; color: red; cursor: pointer;">Cancelar</button>
+            </div>
+
+            <!-- Results Container (Usando tu estructura visual pero con lista dentro) -->
+            <div style="position: relative;">
+                <div style="position: absolute; right: 10px; top: -110px; font-weight: bold; color: #a91e5c;"
+                    id="results-count"></div>
+                <div class="results-list-container textarea-field" id="results-list"
+                    style="overflow-y: auto; background: white;">
+                    <div style="color: #999; padding: 10px;">Resultados aparecerán aquí...</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/bpsearch.js"></script>
+<script>
+    function selectSearchMode(mode) {
+        document.querySelectorAll('.pill').forEach(p => {
+            p.classList.remove('active');
+            p.querySelector('.fa-check').style.display = 'none';
+        });
+        if (mode === 'actual') {
+            document.getElementById('pill-actual').classList.add('active');
+            document.getElementById('pill-actual').querySelector('.fa-check').style.display = 'inline';
+        } else {
+            document.getElementById('pill-subcarpetas').classList.add('active');
+            document.getElementById('pill-subcarpetas').querySelector('.fa-check').style.display = 'inline';
+        }
+    }
+</script>
 {% endblock %}

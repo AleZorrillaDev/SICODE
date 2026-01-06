@@ -1,0 +1,452 @@
+/* --- AUTODOC MODULE CSS --- */
+/* Explicación Estudiante:
+   Este archivo define la apariencia visual del módulo.
+   Usamos variables CSS (:root) para mantener una paleta de colores consistente
+   y facilitar cambios globales (e.g. Modo Oscuro).
+*/
+
+:root {
+    /* --- PALETA DE COLORES (Estilo Corporativo Limpio) --- */
+    --primary-blue: #0f62fe;
+    /* Azul principal (IBM Carbon Style) */
+    --primary-dark: #0043ce;
+    /* Azul oscuro para hover */
+    --primary-light: #e0eaff;
+    /* Fondo azul muy claro */
+
+    --text-main: #161616;
+    /* Texto principal (casi negro) */
+    --text-secondary: #525252;
+    /* Texto secundario (gris oscuro) */
+    --text-tertiary: #8d8d8d;
+    /* Texto deshabilitado o placeholder */
+
+    --bg-app: #f4f4f4;
+    /* Fondo general de la aplicación */
+    --bg-surface: #ffffff;
+    /* Fondo de las tarjetas (blanco puro) */
+    --border-subtle: #e0e0e0;
+    /* Bordes suaves */
+
+    /* Colores Semánticos (Significado) */
+    --error-red: #da1e28;
+    --warning-yellow: #f1c21b;
+    --success-green: #24a148;
+
+    /* Espaciado y Bordes */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* Sombras para dar profundidad (Material Design inspired) */
+    --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.05);
+    --shadow-pop: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* 
+   WIZARD CONTAINER 
+   El contenedor principal que ocupa el espacio restante de la pantalla.
+   Usamos Flexbox para centrar y limitar el ancho máximo.
+*/
+.wizard-container {
+    flex: 1;
+    overflow: hidden;
+    /* Evita doble scroll */
+    position: relative;
+    padding: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+    /* Centrado horizontal */
+    width: 100%;
+    height: calc(100vh - 80px);
+    /* Altura total menos cabecera */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Pasos del Wizard (Ocultos por defecto) */
+.wizard-step {
+    display: none;
+    height: 100%;
+    flex-direction: column;
+}
+
+/* Paso Activo (Visible) */
+.wizard-step.active {
+    display: flex;
+}
+
+.step-header {
+    margin-bottom: 24px;
+}
+
+.step-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.step-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* 
+   PASO 1: GRID DE DOCUMENTOS 
+   Grid CSS automático que se adapta al ancho disponible.
+*/
+.doc-grid {
+    display: grid;
+    /* repeat(auto-fill, ...): Crea tantas columnas como quepan */
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 24px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.doc-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0.38, 0.9);
+    /* Animación suave */
+    box-shadow: var(--shadow-card);
+}
+
+/* Efecto Hover: Elevar tarjeta */
+.doc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-pop);
+    border-color: var(--primary-blue);
+}
+
+.doc-icon {
+    font-size: 40px;
+    color: var(--primary-blue);
+    margin-bottom: 16px;
+}
+
+.doc-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* PASO 2: SEARCH & LIST */
+.case-selector {
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: var(--shadow-card);
+}
+
+.case-search {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.case-search input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    transition: border 0.2s;
+}
+
+.case-search input:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.1);
+    /* Anillo de foco accesible */
+}
+
+.case-list {
+    flex: 1;
+    /* Ocupa el espacio restante */
+    overflow-y: auto;
+}
+
+.case-item {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.1s;
+}
+
+.case-item:hover {
+    background-color: var(--primary-light);
+}
+
+.case-desc {
+    font-weight: 500;
+}
+
+/* 
+   PASO 3: WORKSPACE (PANEL DIVIDIDO) 
+   Izquierda: Formulario | Derecha: Vista Previa
+*/
+.workspace {
+    display: flex;
+    gap: 24px;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Panel Izquierdo (Formulario) */
+.form-panel {
+    width: 420px;
+    min-width: 420px;
+    /* Evita que se encoja */
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+}
+
+.form-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background-color: #FAFAFA;
+}
+
+/* Alert Box (Mensajes de error/aviso) */
+.form-alert {
+    background-color: #fff9e6;
+    border: 1px solid #f1c21b;
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 12px;
+    color: #584612;
+    font-size: 13px;
+    align-items: flex-start;
+}
+
+.form-alert-icon {
+    color: #f1c21b;
+    margin-top: 2px;
+}
+
+.form-alert-title {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+}
+
+/* Tarjetas de Sección (Agrupación de campos) */
+.form-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.form-section-title {
+    padding: 12px 16px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Badge (Etiqueta de estado) */
+.badge-required {
+    background-color: #ffe5e5;
+    color: var(--error-red);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-section-body {
+    padding: 16px;
+}
+
+/* Inputs y Controles */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.required-star {
+    color: var(--error-red);
+    /* Asterisco rojo para obligatorios */
+    margin-left: 2px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #c6c6c6;
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text-main);
+    background: #fff;
+    transition: all 0.2s;
+    /* Transición suave en hover/focus */
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-blue);
+    outline: 2px solid rgba(15, 98, 254, 0.2);
+    outline-offset: -1px;
+}
+
+/* Panel Derecho (Vista Previa) */
+.preview-panel {
+    flex: 1;
+    background: #525659;
+    /* Fondo gris oscuro estándar de visores PDF */
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+.preview-toolbar {
+    height: 48px;
+    background: #323639;
+    color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid #000;
+}
+
+.preview-status {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #24a148;
+}
+
+.preview-canvas {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    padding: 32px;
+}
+
+/* BOTONES GLOBALES */
+.btn-primary {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-subtle);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary:hover {
+    background-color: #e0e0e0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 
+   ESTADOS DE VALIDACIÓN VISUAL 
+   Sobrescriben el estilo del input cuando es válido/inválido.
+   Usamos !important para asegurar que prevalezcan sobre el estilo base.
+*/
+.form-group input.valid,
+.form-group select.valid,
+.form-group textarea.valid {
+    border-color: #10b981 !important;
+    /* Verde éxito */
+    background-color: #f0fdf4 !important;
+    /* Fondo verde muy claro */
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2) !important;
+}
+
+.badge-required.completed {
+    background-color: #dcfce7 !important;
+    color: #15803d !important;
+    padding-right: 6px;
+    padding-left: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}

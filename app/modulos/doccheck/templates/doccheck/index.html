@@ -3,15 +3,26 @@
 {% block title %}Consulta de Documentos{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="/static/css/doccheck.css?v=60">
+<link rel="stylesheet" href="/static/css/doccheck.css?v=62">
 {% endblock %}
 
 {% block scripts %}
 <script src="/static/js/doccheck.js"></script>
 {% endblock %}
 
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">DocCheck</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Consulta de Documentos</span>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="doc-page">
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
     <!-- Fila 1: Navegación centrada -->
     <div class="nav-row">
@@ -21,6 +32,9 @@
             <input type="text" class="pill-input" id="record-idx" value="1">
         </div>
         <button class="btn-nav" id="btn-next"><i class="fa-solid fa-arrow-right"></i></button>
+        <div class="progress-indicator" id="progress-indicator">
+            <span id="current-position">0</span> de <span id="total-records">0</span>
+        </div>
     </div>
 
     <!-- Fila 2: Botones + Campos pill -->

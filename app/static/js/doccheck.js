@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     let currentIdx = 0;
     let totalRecords = 0;
+    let originalValues = {}; // Para detectar cambios sin guardar
+    let hasUnsavedChanges = false;
 
     // Referencias a elementos
     const btnUpload = document.getElementById("btn-upload");
@@ -11,6 +13,180 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnExpExcel = document.getElementById("btn-export-excel");
     const btnExpTxt = document.getElementById("btn-export-txt");
     const btnConsultar = document.querySelector(".btn-consultar");
+
+    // Referencias para indicador de progreso
+    const currentPositionEl = document.getElementById("current-position");
+    const totalRecordsEl = document.getElementById("total-records");
+
+    // ===== CONVERTIR A NÚMEROS ROMANOS =====
+    function convertirARomano(valor) {
+        if (!valor) return "";
+
+        // Si ya es romano (solo letras I, V, X, L, C, D, M), devolverlo
+        const valorStr = String(valor).trim().toUpperCase();
+        if (/^[IVXLCDM]+$/.test(valorStr)) {
+            return valorStr;
+        }
+
+        // Si es número, convertir a romano
+        const num = parseInt(valor);
+        if (isNaN(num) || num <= 0) return valorStr;
+
+        const romanos = [
+            { valor: 1000, simbolo: 'M' },
+            { valor: 900, simbolo: 'CM' },
+            { valor: 500, simbolo: 'D' },
+            { valor: 400, simbolo: 'CD' },
+            { valor: 100, simbolo: 'C' },
+            { valor: 90, simbolo: 'XC' },
+            { valor: 50, simbolo: 'L' },
+            { valor: 40, simbolo: 'XL' },
+            { valor: 10, simbolo: 'X' },
+            { valor: 9, simbolo: 'IX' },
+            { valor: 5, simbolo: 'V' },
+            { valor: 4, simbolo: 'IV' },
+            { valor: 1, simbolo: 'I' }
+        ];
+
+        let resultado = '';
+        let n = num;
+        for (const { valor: v, simbolo } of romanos) {
+            while (n >= v) {
+                resultado += simbolo;
+                n -= v;
+            }
+        }
+        return resultado;
+    }
+
+    // ===== TOAST NOTIFICATIONS =====
+    function showToast(type, message) {
+        const container = document.getElementById("toast-container");
+        if (!container) return;
+
+        const toast = document.createElement("div");
+        toast.className = `toast toast-${type}`;
+
+        const icons = {
+            success: '<i class="fa-solid fa-check-circle"></i>',
+            error: '<i class="fa-solid fa-times-circle"></i>',
+            info: '<i class="fa-solid fa-info-circle"></i>',
+            warning: '<i class="fa-solid fa-exclamation-triangle"></i>'
+        };
+
+        toast.innerHTML = `
+            <span class="toast-icon">${icons[type] || icons.info}</span>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close"><i class="fa-solid fa-times"></i></button>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto cerrar después de 4 segundos
+        const autoClose = setTimeout(() => {
+            toast.classList.add("toast-exit");
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+
+        // Cerrar manualmente
+        toast.querySelector(".toast-close").addEventListener("click", () => {
+            clearTimeout(autoClose);
+            toast.classList.add("toast-exit");
+            setTimeout(() => toast.remove(), 300);
+        });
+    }
+
+    // ===== DETECTAR CAMBIOS SIN GUARDAR =====
+    const editableFields = [
+        "field-folios", "field-tipo-doc", "field-num-doc", "field-razon",
+        "field-ruc", "field-fecha", "field-obs", "field-x1", "field-x2", "field-x3"
+    ];
+
+    function storeOriginalValues() {
+        originalValues = {};
+        editableFields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) originalValues[id] = el.value;
+        });
+        hasUnsavedChanges = false;
+    }
+
+    function checkForChanges() {
+        for (const id of editableFields) {
+            const el = document.getElementById(id);
+            if (el && originalValues[id] !== el.value) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Escuchar cambios en los campos
+    editableFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("input", () => {
+                hasUnsavedChanges = checkForChanges();
+            });
+        }
+    });
+
+    // ===== CONFIRMACIÓN ANTES DE NAVEGAR =====
+    function confirmNavigation(callback) {
+        if (!hasUnsavedChanges) {
+            callback();
+            return;
+        }
+
+        showConfirmModal(
+            "Cambios sin guardar",
+            "Tienes cambios sin guardar. ¿Qué deseas hacer?",
+            [
+                {
+                    text: "Guardar y continuar", type: "primary", action: async () => {
+                        await saveCurrentRecord();
+                        callback();
+                    }
+                },
+                {
+                    text: "Descartar cambios", type: "secondary", action: () => {
+                        hasUnsavedChanges = false;
+                        callback();
+                    }
+                },
+                { text: "Cancelar", type: "cancel", action: () => { } }
+            ]
+        );
+    }
+
+    function showConfirmModal(title, message, buttons) {
+        const overlay = document.createElement("div");
+        overlay.className = "confirm-overlay";
+        overlay.innerHTML = `
+            <div class="confirm-modal">
+                <div class="confirm-icon">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                </div>
+                <h3>${title}</h3>
+                <p>${message}</p>
+                <div class="confirm-actions"></div>
+            </div>
+        `;
+
+        const actionsContainer = overlay.querySelector(".confirm-actions");
+        buttons.forEach(btn => {
+            const button = document.createElement("button");
+            button.className = `confirm-btn confirm-btn-${btn.type}`;
+            button.textContent = btn.text;
+            button.addEventListener("click", () => {
+                overlay.remove();
+                btn.action();
+            });
+            actionsContainer.appendChild(button);
+        });
+
+        document.body.appendChild(overlay);
+    }
 
     // ===== CARGAR ARCHIVO EXCEL =====
     if (btnUpload && fileInput) {
@@ -24,26 +200,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await resp.json();
                 if (data.status === "success") {
                     totalRecords = data.count;
-                    showModal("success", `¡Archivo cargado!\nTotal registros: ${data.count}`);
+                    showToast("success", `¡Archivo cargado! Total: ${data.count} registros`);
                     currentIdx = 0;
                     loadRecord(currentIdx);
                     updateNavButtons();
+                    updateProgressIndicator();
                 } else {
-                    showModal("error", "Error: " + data.error);
+                    showToast("error", "Error: " + data.error);
                 }
             } catch (e) {
-                showModal("error", "Error de red al cargar archivo");
+                showToast("error", "Error de red al cargar archivo");
             }
         });
+    }
+
+    // ===== ACTUALIZAR INDICADOR DE PROGRESO =====
+    function updateProgressIndicator() {
+        if (currentPositionEl) currentPositionEl.textContent = totalRecords > 0 ? currentIdx + 1 : 0;
+        if (totalRecordsEl) totalRecordsEl.textContent = totalRecords;
     }
 
     // ===== NAVEGACIÓN =====
     if (btnPrev) {
         btnPrev.addEventListener("click", () => {
             if (currentIdx > 0) {
-                currentIdx--;
-                loadRecord(currentIdx);
-                updateNavButtons();
+                confirmNavigation(() => {
+                    currentIdx--;
+                    loadRecord(currentIdx);
+                    updateNavButtons();
+                    updateProgressIndicator();
+                });
             }
         });
     }
@@ -51,9 +237,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnNext) {
         btnNext.addEventListener("click", () => {
             if (currentIdx < totalRecords - 1) {
-                currentIdx++;
-                loadRecord(currentIdx);
-                updateNavButtons();
+                confirmNavigation(() => {
+                    currentIdx++;
+                    loadRecord(currentIdx);
+                    updateNavButtons();
+                    updateProgressIndicator();
+                });
             }
         });
     }
@@ -78,62 +267,69 @@ document.addEventListener("DOMContentLoaded", () => {
                 const searchValue = recordIdxInput.value.trim();
 
                 if (!searchValue) {
-                    showModal("info", "Ingresa un número de registro");
+                    showToast("info", "Ingresa un número de registro");
                     return;
                 }
 
                 if (totalRecords === 0) {
-                    showModal("info", "Primero carga un archivo Excel");
+                    showToast("info", "Primero carga un archivo Excel");
                     return;
                 }
 
-                // Usar el número como posición (1-based → convertir a 0-based)
                 const idx = parseInt(searchValue) - 1;
 
                 if (!isNaN(idx) && idx >= 0 && idx < totalRecords) {
-                    currentIdx = idx;
-                    loadRecord(currentIdx);
-                    updateNavButtons();
-                    console.log(`Navegando a registro ${idx + 1} de ${totalRecords}`);
+                    confirmNavigation(() => {
+                        currentIdx = idx;
+                        loadRecord(currentIdx);
+                        updateNavButtons();
+                        updateProgressIndicator();
+                    });
                 } else {
-                    showModal("error", `Registro ${searchValue} no existe.\nRango válido: 1 - ${totalRecords}`);
+                    showToast("error", `Registro ${searchValue} no existe. Rango: 1 - ${totalRecords}`);
                 }
             }
         });
     }
 
     // ===== GUARDAR REGISTRO =====
+    async function saveCurrentRecord() {
+        const formData = new FormData();
+        const fieldMap = {
+            "field-folios": "Folios",
+            "field-tipo-doc": "Tipo Doc",
+            "field-num-doc": "N° Documento",
+            "field-razon": "Razón Social",
+            "field-ruc": "RUC",
+            "field-fecha": "Fecha Extrema",
+            "field-obs": "Observaciones",
+            "field-x1": "X1",
+            "field-x2": "X2",
+            "field-x3": "X3",
+        };
+        for (const [id, key] of Object.entries(fieldMap)) {
+            const el = document.getElementById(id);
+            if (el) formData.append(key, el.value);
+        }
+        try {
+            const resp = await fetch(`/doccheck/save/${currentIdx}`, { method: "POST", body: formData });
+            const res = await resp.json();
+            if (res.status === "success") {
+                showToast("success", "✓ Registro guardado correctamente");
+                storeOriginalValues();
+                return true;
+            } else {
+                showToast("error", "Error: " + res.error);
+                return false;
+            }
+        } catch (e) {
+            showToast("error", "Error de red al guardar");
+            return false;
+        }
+    }
+
     if (btnSave) {
-        btnSave.addEventListener("click", async () => {
-            const formData = new FormData();
-            const fieldMap = {
-                "field-folios": "Folios",
-                "field-tipo-doc": "Tipo Doc",
-                "field-num-doc": "N° Documento",
-                "field-razon": "Razón Social",
-                "field-ruc": "RUC",
-                "field-fecha": "Fecha Extrema",
-                "field-obs": "Observaciones",
-                "field-x1": "X1",
-                "field-x2": "X2",
-                "field-x3": "X3",
-            };
-            for (const [id, key] of Object.entries(fieldMap)) {
-                const el = document.getElementById(id);
-                if (el) formData.append(key, el.value);
-            }
-            try {
-                const resp = await fetch(`/doccheck/save/${currentIdx}`, { method: "POST", body: formData });
-                const res = await resp.json();
-                if (res.status === "success") {
-                    showModal("success", "Datos guardados correctamente");
-                } else {
-                    showModal("error", "Error: " + res.error);
-                }
-            } catch (e) {
-                showModal("error", "Error de red al guardar");
-            }
-        });
+        btnSave.addEventListener("click", saveCurrentRecord);
     }
 
     // ===== CONSULTAR RUC =====
@@ -145,17 +341,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const URL_CONSULTA = "http://intranet/cl-ti-iaconsruc/jcrS01Alias";
 
             if (!ruc) {
-                showModal("info", "Validar número RUC\n\nNo hay RUC ingresado.");
-                // Abrir la URL de consulta
+                showToast("info", "No hay RUC ingresado");
                 window.open(URL_CONSULTA, "_blank");
             } else {
-                // Copiar RUC al portapapeles
                 navigator.clipboard.writeText(ruc).then(() => {
-                    showModal("success", `RUC copiado: ${ruc}\n\nSe abrirá la página de consulta.`);
+                    showToast("success", `RUC copiado: ${ruc}`);
                     window.open(URL_CONSULTA, "_blank");
                 }).catch(() => {
-                    // Fallback si no hay clipboard API
-                    showModal("info", `RUC: ${ruc}\n\nCopia manualmente y consulta.`);
+                    showToast("info", `RUC: ${ruc} - Copia manualmente`);
                     window.open(URL_CONSULTA, "_blank");
                 });
             }
@@ -166,7 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnExpExcel) {
         btnExpExcel.addEventListener("click", () => {
             if (totalRecords === 0) {
-                showModal("info", "Primero carga un archivo Excel");
+                showToast("info", "Primero carga un archivo Excel");
                 return;
             }
             showExportModal("excel");
@@ -176,64 +369,83 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnExpTxt) {
         btnExpTxt.addEventListener("click", () => {
             if (totalRecords === 0) {
-                showModal("info", "Primero carga un archivo Excel");
+                showToast("info", "Primero carga un archivo Excel");
                 return;
             }
             showExportModal("txt");
         });
     }
 
-    // ===== MODAL DE EXPORTACIÓN =====
+    // ===== MODAL DE EXPORTACIÓN MEJORADO =====
     function showExportModal(formato) {
-        // Crear modal de exportación
         const overlay = document.createElement("div");
         overlay.className = "export-overlay";
         overlay.innerHTML = `
-            <div class="export-modal">
-                <h3>Exportar a ${formato.toUpperCase()}</h3>
-                <div class="export-options">
-                    <label class="export-option">
-                        <input type="radio" name="export-type" value="todo" checked>
-                        <span>Exportar TODO</span>
-                    </label>
-                    <label class="export-option">
-                        <input type="radio" name="export-type" value="caja">
-                        <span>Por N° de Caja:</span>
-                        <input type="text" id="export-caja-input" placeholder="N° Caja" disabled>
-                    </label>
+            <div class="export-modal-v2">
+                <h2 class="export-title">SELECCIONE QUE EXPORTAR</h2>
+                
+                <div class="export-cards">
+                    <div class="export-card" data-type="todo">
+                        <div class="export-card-icon">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+                        <span class="export-card-label">TODO</span>
+                    </div>
+                    
+                    <div class="export-card" data-type="caja">
+                        <div class="export-card-icon">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+                        <span class="export-card-label">CAJA</span>
+                    </div>
                 </div>
-                <div class="export-actions">
-                    <button class="btn-export-cancel">Cancelar</button>
-                    <button class="btn-export-confirm">Exportar</button>
+
+                <div class="export-caja-section" id="export-caja-section" style="display: none;">
+                    <div class="export-caja-field">
+                        <span class="export-caja-label">Nº DE CAJA</span>
+                        <input type="text" id="export-caja-input" class="export-caja-input" placeholder="">
+                    </div>
                 </div>
+
+                <button class="export-btn-submit" id="export-submit">
+                    EXPORTAR
+                </button>
             </div>
         `;
 
         document.body.appendChild(overlay);
 
-        // Event listeners
-        const radios = overlay.querySelectorAll('input[name="export-type"]');
+        let selectedType = "todo";
+        const cards = overlay.querySelectorAll(".export-card");
+        const cajaSection = overlay.querySelector("#export-caja-section");
         const cajaInput = overlay.querySelector("#export-caja-input");
 
-        radios.forEach(radio => {
-            radio.addEventListener("change", () => {
-                cajaInput.disabled = radio.value !== "caja";
-                if (radio.value === "caja") cajaInput.focus();
+        cards.forEach(card => {
+            card.addEventListener("click", () => {
+                cards.forEach(c => c.classList.remove("selected"));
+                card.classList.add("selected");
+                selectedType = card.dataset.type;
+
+                if (selectedType === "caja") {
+                    cajaSection.style.display = "flex";
+                    cajaInput.focus();
+                } else {
+                    cajaSection.style.display = "none";
+                }
             });
         });
 
-        overlay.querySelector(".btn-export-cancel").addEventListener("click", () => {
-            overlay.remove();
-        });
+        // Seleccionar "TODO" por defecto
+        cards[0].classList.add("selected");
 
-        overlay.querySelector(".btn-export-confirm").addEventListener("click", () => {
-            const selected = overlay.querySelector('input[name="export-type"]:checked').value;
+        overlay.querySelector("#export-submit").addEventListener("click", () => {
             let url = `/doccheck/export/${formato}`;
 
-            if (selected === "caja") {
+            if (selectedType === "caja") {
                 const cajaVal = cajaInput.value.trim();
                 if (!cajaVal) {
-                    showModal("info", "Ingresa el N° de Caja");
+                    showToast("warning", "Ingresa el N° de Caja");
+                    cajaInput.focus();
                     return;
                 }
                 url += `?caja=${encodeURIComponent(cajaVal)}`;
@@ -241,11 +453,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
             window.location.href = url;
             overlay.remove();
+            showToast("success", `Exportando a ${formato.toUpperCase()}...`);
         });
 
         overlay.addEventListener("click", (e) => {
             if (e.target === overlay) overlay.remove();
         });
+
+        // Cerrar con ESC
+        const handleEsc = (e) => {
+            if (e.key === "Escape") {
+                overlay.remove();
+                document.removeEventListener("keydown", handleEsc);
+            }
+        };
+        document.addEventListener("keydown", handleEsc);
     }
 
     // ===== CARGAR REGISTRO =====
@@ -259,7 +481,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     const el = document.getElementById(id);
                     if (el) el.value = val || "";
                 };
-                setVal("record-idx", d["N° Registro"]);
+
+                // Formatear N° Registro con Tomo si existe
+                let registroDisplay = d["N° Registro"] || "";
+                const tomo = d["Tomo"];
+                if (tomo && tomo !== "" && tomo !== null) {
+                    // Si el tomo ya es romano (I, II, III, etc) usarlo directo
+                    // Si es número, convertirlo a romano
+                    const tomoRomano = convertirARomano(tomo);
+                    registroDisplay = `${d["N° Registro"]}-${tomoRomano}`;
+                }
+                setVal("record-idx", registroDisplay);
                 setVal("field-paquete", d["Paquete"]);
                 setVal("field-caja", d["Caja"]);
                 setVal("field-folios", d["Folios"]);
@@ -272,33 +504,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 setVal("field-x1", d["X1"]);
                 setVal("field-x2", d["X2"]);
                 setVal("field-x3", d["X3"]);
+
+                // Guardar valores originales para detectar cambios
+                storeOriginalValues();
+                updateProgressIndicator();
             } else if (res.error === "Index out of range") {
-                // No hacer nada, ya estamos en el límite
+                // No hacer nada
             }
         } catch (e) {
             console.error("Error cargando registro:", e);
         }
     }
 
-    // ===== MODAL DE MENSAJES (usa uiModal global si existe) =====
+    // ===== MODAL DE MENSAJES (legacy - usa toast ahora) =====
     function showModal(type, message) {
-        const modal = document.getElementById("uiModal");
-        const icon = document.getElementById("uiModalIcon");
-        const msg = document.getElementById("uiModalMsg");
-        const btn = document.getElementById("uiModalBtn");
-
-        if (modal && icon && msg && btn) {
-            // Usar el modal global
-            icon.className = "uimodal-icon " + (type === "error" ? "error" : "success");
-            icon.innerHTML = type === "error"
-                ? '<i class="fa-solid fa-xmark"></i>'
-                : '<i class="fa-solid fa-check"></i>';
-            msg.textContent = message;
-            modal.classList.remove("uimodal-hidden");
-        } else {
-            // Fallback a alert
-            alert(message);
-        }
+        showToast(type, message);
     }
 
     // ===== ATAJOS DE TECLADO =====
@@ -308,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             if (btnSave) btnSave.click();
         }
-        // Flechas izq/der = Navegación
+        // Flechas izq/der = Navegación (solo si no está en input)
         if (e.key === "ArrowLeft" && !e.target.matches("input")) {
             if (btnPrev && !btnPrev.disabled) btnPrev.click();
         }
@@ -320,4 +540,5 @@ document.addEventListener("DOMContentLoaded", () => {
     // Inicializar
     loadRecord(0);
     updateNavButtons();
+    updateProgressIndicator();
 });

@@ -99,4 +99,3 @@ async def export_data(format_type: str, caja: str = ""):
              raise HTTPException(status_code=400, detail="Invalid format")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

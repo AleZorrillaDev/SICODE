@@ -2,6 +2,9 @@
 
 {% block title %}Inicio - Portal Corporativo{% endblock %}
 
+<!-- Ocultar flecha de volver en Inicio -->
+{% block back_button %}{% endblock %}
+
 {% block content %}
 
 <!-- CONTENEDOR CENTRALIZADO -->
@@ -85,7 +88,7 @@
         </div>
 
         <!-- App 5: AutoDoc (Naranja) -->
-        <div class="module-card card-orange" onclick="alert('Abriendo AutoDoc...')"
+        <div class="module-card card-orange" onclick="window.location.href='/autodoc/'"
             data-name="autodoc generador documentos automatico">
             <div style="display: flex; align-items: start; justify-content: space-between;">
                 <div class="module-icon-box">

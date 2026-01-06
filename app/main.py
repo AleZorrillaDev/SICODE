@@ -12,6 +12,7 @@ from app.modulos.bpsearch.router import router as bpsearch_router
 from app.modulos.datamask.router import router as datamask_router
 from app.modulos.scadbot.router import router as scadbot_router
 from app.modulos.signa.router import router as signa_router
+from app.modulos.autodoc.router import router as autodoc_router
 
 # Inicializar la aplicación FastAPI
 app = FastAPI(
@@ -34,6 +35,7 @@ app.include_router(bpsearch_router)
 app.include_router(datamask_router)
 app.include_router(scadbot_router)
 app.include_router(signa_router)
+app.include_router(autodoc_router)
 
 if __name__ == "__main__":
     # Permite ejecutar el script directamente para desarrollo

@@ -92,6 +92,31 @@ body {
     letter-spacing: -0.5px;
 }
 
+/* Module Title in Header */
+.module-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-main);
+    font-size: 16px;
+    color: var(--text-dark);
+}
+
+.module-header-title .module-name {
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+.module-header-title .separator {
+    color: var(--text-light-gray);
+    font-weight: 300;
+}
+
+.module-header-title .module-desc {
+    font-weight: 500;
+    color: var(--text-gray);
+}
+
 /* User Profile */
 .user-area {
     display: flex;
@@ -437,6 +462,19 @@ body {
     .brand-name {
         display: none;
         /* En móvil solo logo */
+    }
+
+    .module-header-title {
+        font-size: 13px;
+        gap: 6px;
+    }
+
+    .module-header-title .module-desc {
+        display: none;
+    }
+
+    .module-header-title .separator {
+        display: none;
     }
 }
 

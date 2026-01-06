@@ -1,10 +1,5 @@
 /* --- BPSEARCH MODULE CSS (Flexbox Responsive) --- */
 
-/* Override: Header estático */
-.main-header {
-    position: static !important;
-}
-
 /* Página principal */
 .bp-page {
     width: 100%;
@@ -12,36 +7,6 @@
     background-color: #d8e3f0;
     padding: 25px 40px 30px;
     overflow-y: auto;
-}
-
-/* Header del módulo */
-.bp-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
-}
-
-.user-icon {
-    width: 48px;
-    height: 48px;
-    background-color: #a91e5c;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 20px;
-    flex-shrink: 0;
-}
-
-.bp-header h1 {
-    color: #a91e5c;
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    font-family: 'Poppins', sans-serif;
 }
 
 /* Main Content */
@@ -54,6 +19,8 @@
 .left-section {
     flex: 1;
     min-width: 300px;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Seleccionar Carpeta Button */
@@ -96,45 +63,92 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
-    flex-wrap: wrap;
+    width: 100%;
+    /* No max-width restriction to fit parent */
 }
 
-.btn-filtrar {
-    background-color: #0066b3;
+/* User's Box Design Implementation (Relative Flex Version) */
+.search-box {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    /* Simulates rectangle-1.svg */
+    border-radius: 100px;
+    height: 48px;
+    flex: 1;
+    /* Take available space */
+    max-width: 600px;
+    /* Or 996px as requested but relative */
+    padding: 5px;
+    /* Slight padding for inner group */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    /* Optional shadow since no BG image */
+    position: relative;
+    border: 1px solid #e0e0e0;
+}
+
+/* Blue Label Section (.frame) */
+.search-label {
+    display: flex;
+    width: 160px;
+    /* Fixed like user request */
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    background-color: #0163ac;
+    border-radius: 100px;
     color: white;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    padding: 12px 35px;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: background-color 0.2s;
     font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    z-index: 2;
 }
 
-.btn-filtrar:hover {
-    background-color: #005494;
+/* The Input Field */
+.search-input-real {
+    flex: 1;
+    border: none;
+    height: 100%;
+    background: transparent;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #333;
+    padding-left: 20px;
+    outline: none;
+    border-radius: 0 100px 100px 0;
+}
+
+.search-input-real::placeholder {
+    color: #999;
+    font-weight: 500;
 }
 
 .btn-search {
     background-color: #a91e5c;
     border: none;
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
     color: white;
     font-size: 18px;
     flex-shrink: 0;
+    box-shadow: 0 4px 6px rgba(169, 30, 92, 0.3);
 }
 
 .btn-search:hover {
     background-color: #8a1849;
+    transform: scale(1.05);
+}
+
+/* Hide legacy items */
+.search-input-hidden,
+.btn-filtrar {
+    display: none;
 }
 
 /* Filter Pills */
@@ -157,6 +171,17 @@
     align-items: center;
     gap: 8px;
     font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pill:hover {
+    background-color: #f0f8ff;
+}
+
+.pill.active {
+    background-color: #0066b3;
+    color: white;
 }
 
 .pill-close {
@@ -259,7 +284,7 @@
 
 /* Right Section */
 .right-section {
-    width: 280px;
+    width: 320px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -365,6 +390,201 @@
     border-color: #0066b3;
 }
 
+/* ===== EXTRAS MIO (Functional) ===== */
+
+/* Results Item (Rich List) */
+.result-item {
+    background: white;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border-left: 4px solid #a91e5c;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    font-family: 'Poppins', sans-serif;
+}
+
+.result-item:hover {
+    background-color: #fcfcfc;
+}
+
+.result-item-title {
+    font-weight: 700;
+    color: #333;
+    font-size: 13px;
+    margin-bottom: 4px;
+    word-break: break-all;
+}
+
+.result-item-details {
+    font-size: 12px;
+    color: #666;
+    background: #f0f4f8;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.result-highlight {
+    color: #a91e5c;
+    font-weight: 600;
+}
+
+/* Toasts */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: #333;
+    border-left: 4px solid #333;
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast-success {
+    border-left-color: #4caf50;
+}
+
+.toast-error {
+    border-left-color: #f44336;
+}
+
+.toast-warning {
+    border-left-color: #ff9800;
+}
+
+.toast-info {
+    border-left-color: #2196f3;
+}
+
+/* Modal */
+.folder-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5000;
+}
+
+.folder-modal {
+    background: white;
+    width: 600px;
+    max-width: 90%;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.folder-modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.folder-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
+.folder-modal-path {
+    padding: 10px 20px;
+    display: flex;
+    gap: 10px;
+    background: #f9f9f9;
+}
+
+.folder-modal-path input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.btn-go {
+    background: #0066b3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0 15px;
+    cursor: pointer;
+}
+
+.folder-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 20px;
+}
+
+.folder-item {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    font-size: 14px;
+    color: #444;
+}
+
+.folder-item:hover {
+    background: #f0f8ff;
+    color: #0066b3;
+}
+
+.folder-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-secondary {
+    background: #eee;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #0066b3;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
 /* ===== RESPONSIVE ===== */
 
 /* Tablets */
@@ -378,7 +598,7 @@
     }
 
     .right-section {
-        width: 220px;
+        width: 250px;
     }
 
     .btn-carpeta {
