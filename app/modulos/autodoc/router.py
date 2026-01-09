@@ -14,11 +14,11 @@ router = APIRouter(prefix="/autodoc", tags=["AutoDoc"])
 # Aquí le decimos a FastAPI dónde buscar los archivos .html.
 # MUY IMPORTANTE: Incluimos carpetas compartidas ('inicio/templates' y 'app/templates')
 # porque nuestro index.html usa {% extends "base.html" %}, y ese archivo base vive ahí.
-templates = Jinja2Templates(directory=[
-    "app/modulos/autodoc/templates",
-    "app/modulos/inicio/templates",
-    "app/templates"
-])
+from app.core.config import settings
+templates_dir = settings.get_template_path("app/modulos/autodoc/templates")
+templates_base = settings.get_template_path("app/modulos/inicio/templates")
+templates_global = settings.get_template_path("app/templates")
+templates = Jinja2Templates(directory=[templates_dir, templates_base, templates_global])
 
 # --- MODELOS DE DATOS (Pydantic) ---
 # Definimos la estructura exacta que esperamos recibir del Frontend.

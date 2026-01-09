@@ -18,7 +18,11 @@ router = APIRouter()
 # Opción B: Múltiples directorios.
 # Usaremos Opción B para aislamiento real.
 
-templates = Jinja2Templates(directory=["app/modulos/inicio/templates"])
+from app.core.config import settings
+
+# Usamos la función de configuración para obtener la ruta absoluta correcta (soporte EXE)
+templates_dir = settings.get_template_path("app/modulos/inicio/templates")
+templates = Jinja2Templates(directory=[templates_dir])
 
 @router.get("/", name="inicio.index")
 async def pagina_inicio(request: Request):

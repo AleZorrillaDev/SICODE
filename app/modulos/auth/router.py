@@ -2,7 +2,9 @@ from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory=["app/modulos/auth/templates"])
+from app.core.config import settings
+templates_dir = settings.get_template_path("app/modulos/auth/templates")
+templates = Jinja2Templates(directory=[templates_dir])
 
 @router.get("/login", name="auth.login")
 async def login_page(request: Request):

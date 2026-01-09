@@ -21,11 +21,10 @@ from .processor import BPSearchProcessor
 
 router = APIRouter(prefix="/bpsearch", tags=["bpsearch"])
 
-templates = Jinja2Templates(directory=[
-    "app/templates", 
-    "app/modulos/bpsearch/templates",
-    "app/modulos/inicio/templates"
-])
+from app.core.config import settings
+templates_dir = settings.get_template_path("app/modulos/bpsearch/templates")
+templates_base = settings.get_template_path("app/modulos/inicio/templates")
+templates = Jinja2Templates(directory=[templates_dir, templates_base])
 
 # Instancia global del procesador (para demo - en producción usar sesiones)
 processor_instance: Optional[BPSearchProcessor] = None

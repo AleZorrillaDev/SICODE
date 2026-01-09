@@ -5,11 +5,10 @@ import asyncio
 
 router = APIRouter(prefix="/scadbot", tags=["scadbot"])
 
-templates = Jinja2Templates(directory=[
-    "app/templates", 
-    "app/modulos/scadbot/templates",
-    "app/modulos/inicio/templates"
-])
+from app.core.config import settings
+templates_dir = settings.get_template_path("app/modulos/scadbot/templates")
+templates_base = settings.get_template_path("app/modulos/inicio/templates")
+templates = Jinja2Templates(directory=[templates_dir, templates_base])
 
 @router.get("/")
 async def scadbot_home(request: Request):

@@ -22,7 +22,7 @@ app = FastAPI(
 )
 
 # Configuración de Recursos Estáticos
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 
 # Configuración de Base de Datos
 Base.metadata.create_all(bind=engine)

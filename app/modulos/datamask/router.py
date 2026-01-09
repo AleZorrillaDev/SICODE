@@ -8,12 +8,10 @@ import base64
 
 router = APIRouter(prefix="/datamask", tags=["datamask"])
 
-templates = Jinja2Templates(directory=[
-    "app/templates", 
-    "app/modulos/datamask/templates",
-    "app/modulos/inicio/templates"
-
-])
+from app.core.config import settings
+templates_dir = settings.get_template_path("app/modulos/datamask/templates")
+templates_base = settings.get_template_path("app/modulos/inicio/templates")
+templates = Jinja2Templates(directory=[templates_dir, templates_base])
 
 @router.get("/")
 async def datamask_home(request: Request):

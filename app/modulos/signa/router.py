@@ -6,11 +6,10 @@ import asyncio
 
 router = APIRouter(prefix="/signa", tags=["signa"])
 
-templates = Jinja2Templates(directory=[
-    "app/templates", 
-    "app/modulos/signa/templates",
-    "app/modulos/inicio/templates"
-])
+from app.core.config import settings
+templates_dir = settings.get_template_path("app/modulos/signa/templates")
+templates_base = settings.get_template_path("app/modulos/inicio/templates")
+templates = Jinja2Templates(directory=[templates_dir, templates_base])
 
 @router.get("/")
 async def signa_home(request: Request):
