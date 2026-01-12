@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}SBS Monitor - NextGen{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* --- NEXTGEN UI DESIGN --- */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+    :root {
+        --font-outfit: 'Outfit', sans-serif;
+        --bg-gradient: linear-gradient(120deg, #f6f8fb 0%, #f1f4f9 100%);
+
+        /* Glass Effect Vars */
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+
+        /* Vibrant Brand Colors */
+        --c-blue: #3b82f6;
+        --c-blue-gl: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        --c-purple: #8b5cf6;
+        --c-purple-gl: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+        --c-green: #10b981;
+        --c-green-gl: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    }
+
+    body {
+        background: var(--bg-gradient);
+        font-family: var(--font-outfit);
+        color: #1e293b;
+    }
+
+    .app-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 40px 30px;
+    }
+
+    /* --- HERO HEADER --- */
+    .hero-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 50px;
+        animation: slideDown 0.6s ease-out;
+    }
+
+    .hero-text h1 {
+        font-size: 36px;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(to right, #1e293b, #475569);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -1px;
+    }
+
+    .hero-text p {
+        margin: 5px 0 0 0;
+        color: #64748b;
+        font-size: 16px;
+        font-weight: 400;
+    }
+
+    .live-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        background: white;
+        border-radius: 50px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        font-weight: 600;
+        color: #0f172a;
+        font-size: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .beacon {
+        width: 10px;
+        height: 10px;
+        background: #ef4444;
+        /* Red for live attention, or green */
+        background: #22c55e;
+        border-radius: 50%;
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+        animation: pulse-beacon 2s infinite;
+    }
+
+    /* --- THE TRIPLE GRID --- */
+    .columns-wrapper {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+        .columns-wrapper {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* --- COLUMN STYLE --- */
+    .innovator-col {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* Header Card for Column */
+    .col-hero-card {
+        padding: 25px;
+        border-radius: 20px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 140px;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .col-hero-card:hover {
+        transform: scale(1.02);
+    }
+
+    /* Background Gradients */
+    .hero-fin {
+        background: var(--c-blue-gl);
+    }
+
+    .hero-coop {
+        background: var(--c-purple-gl);
+    }
+
+    .hero-conc {
+        background: var(--c-green-gl);
+    }
+
+    /* Decorative Circle overlay */
+    .col-hero-card::after {
+        content: "";
+        position: absolute;
+        top: -30px;
+        right: -30px;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+    }
+
+    .col-icon {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .col-name {
+        font-size: 16px;
+        font-weight: 600;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .col-stat {
+        font-size: 32px;
+        font-weight: 700;
+    }
+
+    /* --- CONTENT CARDS (GLASS STYLE) --- */
+    .content-block {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: var(--glass-border);
+        border-radius: 16px;
+        box-shadow: var(--glass-shadow);
+        overflow: hidden;
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    .block-header {
+        padding: 15px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    .mini-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 8px;
+        font-weight: 700;
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    /* List Items */
+    .modern-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .modern-item {
+        padding: 12px 20px;
+        font-size: 14px;
+        color: #334155;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: background 0.2s, padding-left 0.2s;
+    }
+
+    .modern-item:last-child {
+        border-bottom: none;
+    }
+
+    .modern-item:hover {
+        background: rgba(255, 255, 255, 0.6);
+        padding-left: 25px;
+        /* Slide effect */
+        color: #0f172a;
+    }
+
+    /* Colored Bullets */
+    .blob {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        transform: rotate(45deg);
+    }
+
+    .blob-fin {
+        background: var(--c-blue);
+    }
+
+    .blob-coop {
+        background: var(--c-purple);
+    }
+
+    .blob-conc {
+        background: var(--c-green);
+    }
+
+    .empty-state {
+        padding: 20px;
+        text-align: center;
+        font-size: 13px;
+        color: #94a3b8;
+        font-style: italic;
+    }
+
+    /* ANIMATIONS */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes pulse-beacon {
+        0% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">SBS View</span>
+    <span class="separator">|</span>
+    <span class="module-desc">NextGen Monitor</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="app-container">
+
+    <!-- Hero Header -->
+    <div class="hero-section">
+        <div class="hero-text">
+            <h1>Panorama de Liquidaciones</h1>
+            <p>Monitoreo inteligente en tiempo real de entidades supervisadas.</p>
+        </div>
+        <div class="live-pill">
+            <div class="beacon"></div>
+            <span>Vigente al: {{ timestamp_str }}</span>
+        </div>
+    </div>
+
+    <!-- Triple Column Grid -->
+    <div class="columns-wrapper">
+
+        <!-- COLUMNA 1: FINANCIERO -->
+        <div class="innovator-col">
+            <!-- Hero Card -->
+            <div class="col-hero-card hero-fin">
+                <i class="fa-solid fa-building-columns col-icon"></i>
+                <div>
+                    <div class="col-stat">{{ data.total_financiero }}</div>
+                    <div class="col-name">Sistema Financiero</div>
+                </div>
+            </div>
+
+            <!-- Data Blocks -->
+            {% for category, items in data.sistema_financiero.items() %}
+            <div class="content-block">
+                <div class="block-header">
+                    {{ category }}
+                    <span class="mini-badge">{{ items|length }}</span>
+                </div>
+                {% if items %}
+                <ul class="modern-list">
+                    {% for item in items %}
+                    <li class="modern-item">
+                        <div class="blob blob-fin"></div>
+                        {{ item }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">Sin registros activos</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- COLUMNA 2: COOPAC -->
+        <div class="innovator-col">
+            <!-- Hero Card -->
+            <div class="col-hero-card hero-coop">
+                <i class="fa-solid fa-users-viewfinder col-icon"></i>
+                <div>
+                    <div class="col-stat">{{ data.total_coopac }}</div>
+                    <div class="col-name">Sistema COOPAC</div>
+                </div>
+            </div>
+
+            <!-- Data Blocks -->
+            {% for category, items in data.sistema_coopac.items() %}
+            <div class="content-block">
+                <div class="block-header">
+                    {{ category }}
+                    <span class="mini-badge">{{ items|length }}</span>
+                </div>
+                {% if items %}
+                <ul class="modern-list">
+                    {% for item in items %}
+                    <li class="modern-item">
+                        <div class="blob blob-coop"></div>
+                        {{ item }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">Sin registros activos</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- COLUMNA 3: CONCLUIDOS -->
+        <div class="innovator-col">
+            <!-- Hero Card -->
+            <div class="col-hero-card hero-conc">
+                <i class="fa-solid fa-box-archive col-icon"></i>
+                <div>
+                    <div class="col-stat">{{ data.total_concluidas }}</div>
+                    <div class="col-name">Procesos Cerrados</div>
+                </div>
+            </div>
+
+            <!-- Data Blocks -->
+            {% for category, items in data.liquidaciones_concluidas.items() %}
+            <div class="content-block">
+                <div class="block-header">
+                    {{ category }}
+                    <span class="mini-badge">{{ items|length }}</span>
+                </div>
+                {% if items %}
+                <ul class="modern-list">
+                    {% for item in items %}
+                    <li class="modern-item">
+                        <div class="blob blob-conc"></div>
+                        {{ item }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">Sin registros activos</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
