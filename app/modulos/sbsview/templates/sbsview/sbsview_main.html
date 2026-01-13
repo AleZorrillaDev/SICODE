@@ -31,8 +31,15 @@
         color: #1e293b;
     }
 
-    .app-container {
-        max-width: 1600px;
+    /* OVERRIDE BASE TEMPLATE WIDTH to allow wide dashboard */
+    .main-content-area {
+        max-width: 1800px !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+    }
+
+    .sbs-monitor-wrapper {
+        width: 100%;
         margin: 0 auto;
         padding: 40px 30px;
     }
@@ -298,6 +305,61 @@
             box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
         }
     }
+
+    /* Detailed Item Styling */
+    .item-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .item-main-name {
+        font-weight: 500;
+        color: #1e293b;
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+
+    .item-details {
+        font-size: 11px;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .item-ruc {
+        font-weight: 600;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 1px 6px;
+        border-radius: 4px;
+        color: #475569;
+    }
+
+    .item-sep {
+        color: #cbd5e1;
+        font-size: 8px;
+    }
+
+    .item-razon-link {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .item-razon-link:hover .item-razon {
+        text-decoration: underline;
+        color: var(--c-blue);
+    }
+
+    .item-razon {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+        opacity: 0.9;
+    }
 </style>
 {% endblock %}
 
@@ -310,13 +372,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="app-container">
+<div class="sbs-monitor-wrapper">
 
     <!-- Hero Header -->
     <div class="hero-section">
         <div class="hero-text">
             <h1>Panorama de Liquidaciones</h1>
-            <p>Monitoreo inteligente en tiempo real de entidades supervisadas.</p>
+            <p>Monitoreo inteligente en tiempo real por Deep Scraping.</p>
         </div>
         <div class="live-pill">
             <div class="beacon"></div>
@@ -350,7 +412,18 @@
                     {% for item in items %}
                     <li class="modern-item">
                         <div class="blob blob-fin"></div>
-                        {{ item }}
+                        <div class="item-content">
+                            <div class="item-main-name">{{ item.nombre }}</div>
+                            <div class="item-details">
+                                <a href="{{ item.link_sbs }}" class="item-razon-link" target="_blank">
+                                    <span class="item-ruc">RUC: {{ item.ruc }}</span>
+                                    {% if item.razon_social != '---' and item.razon_social != item.nombre %}
+                                    <span class="item-sep">•</span>
+                                    <span class="item-razon">{{ item.razon_social }}</span>
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -384,7 +457,18 @@
                     {% for item in items %}
                     <li class="modern-item">
                         <div class="blob blob-coop"></div>
-                        {{ item }}
+                        <div class="item-content">
+                            <div class="item-main-name">{{ item.nombre }}</div>
+                            <div class="item-details">
+                                <a href="{{ item.link_sbs }}" class="item-razon-link" target="_blank">
+                                    <span class="item-ruc">RUC: {{ item.ruc }}</span>
+                                    {% if item.razon_social != '---' and item.razon_social != item.nombre %}
+                                    <span class="item-sep">•</span>
+                                    <span class="item-razon">{{ item.razon_social }}</span>
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -418,7 +502,18 @@
                     {% for item in items %}
                     <li class="modern-item">
                         <div class="blob blob-conc"></div>
-                        {{ item }}
+                        <div class="item-content">
+                            <div class="item-main-name">{{ item.nombre }}</div>
+                            <div class="item-details">
+                                <a href="{{ item.link_sbs }}" class="item-razon-link" target="_blank">
+                                    <span class="item-ruc">RUC: {{ item.ruc }}</span>
+                                    {% if item.razon_social != '---' and item.razon_social != item.nombre %}
+                                    <span class="item-sep">•</span>
+                                    <span class="item-razon">{{ item.razon_social }}</span>
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -431,5 +526,312 @@
 
     </div>
 
+    <!-- MODAL DE CARGA INTELIGENTE (MOVADO DENTRO DE CONTENT) -->
+    <div class="ruc-modal-overlay" id="ruc-modal-active" style="display:none;">
+        <div class="ruc-modal">
+            <div class="ruc-modal-icon">
+                <i class="fa-solid fa-satellite-dish fa-spin"></i>
+            </div>
+            <h3>Buscando RUCs Faltantes</h3>
+            <p>Analizando web en tiempo real...</p>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="ruc-progress" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="ruc-progress-text">0% completado</div>
+        </div>
+    </div>
+
+    <style>
+        .ruc-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .ruc-modal {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .ruc-modal-icon {
+            font-size: 40px;
+            color: #3b82f6;
+            margin-bottom: 20px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            transition: width 0.3s ease;
+        }
+    </style>
+
 </div>
+{% endblock %}
+
+
+<!-- MODAL DE CARGA INTELIGENTE -->
+<div class="ruc-modal-overlay" id="ruc-modal">
+    <div class="ruc-modal">
+        <div class="ruc-modal-icon">
+            <i class="fa-solid fa-satellite-dish fa-spin"></i>
+        </div>
+        <h3>Buscando RUCs Faltantes</h3>
+        <p>Analizando web en tiempo real...</p>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="ruc-progress" style="width: 0%"></div>
+        </div>
+        <div class="progress-text" id="ruc-progress-text">0% completado</div>
+    </div>
+</div>
+
+<style>
+    .ruc-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(5px);
+        display: none;
+        /* Hidden by default */
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .ruc-modal {
+        background: white;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 350px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .ruc-modal-icon {
+        font-size: 40px;
+        color: var(--c-blue);
+        margin-bottom: 20px;
+    }
+
+    .ruc-modal h3 {
+        margin: 0 0 10px 0;
+        color: #1e293b;
+    }
+
+    .ruc-modal p {
+        margin: 0 0 25px 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .progress-container {
+        width: 100%;
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: var(--c-blue-gl);
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+    }
+</style>
+
+
+
+<!-- MODAL DE CARGA INTELIGENTE (RESTAURADO) -->
+<div class="ruc-modal-overlay" id="ruc-modal" style="display:none;">
+    <div class="ruc-modal">
+        <div class="ruc-modal-icon">
+            <i class="fa-solid fa-satellite-dish fa-spin"></i>
+        </div>
+        <h3>Buscando RUCs Faltantes</h3>
+        <p>Analizando web en tiempo real...</p>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="ruc-progress" style="width: 0%"></div>
+        </div>
+        <div class="progress-text" id="ruc-progress-text">0% completado</div>
+    </div>
+</div>
+
+<style>
+    .ruc-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(5px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .ruc-modal {
+        background: white;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 350px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .ruc-modal-icon {
+        font-size: 40px;
+        color: #3b82f6;
+        margin-bottom: 20px;
+    }
+
+    .progress-container {
+        width: 100%;
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        transition: width 0.3s ease;
+    }
+</style>
+
+{% block scripts %}
+<!-- Manual Trigger Button (Just in case auto-start fails) -->
+<div style="position: fixed; bottom: 20px; right: 20px; z-index: 9900;">
+    <button id="btn-force-scan" onclick="window.iniciarEscaneo()"
+        style="background:#3b82f6; color:white; border:none; padding:10px 20px; border-radius:50px; box-shadow:0 10px 20px rgba(0,0,0,0.2); cursor:pointer; font-weight:600;">
+        <i class="fa-solid fa-radar"></i> Buscar RUCs
+    </button>
+</div>
+
+<script>
+    // Exponemos la funcion al scope global para que el onclick funcione
+    window.iniciarEscaneo = function () {
+        console.log("🚀 EJECUTANDO ESCANEO (Global Scope)...");
+
+        const pendingItems = [];
+
+        document.querySelectorAll(".item-ruc").forEach(el => {
+            const text = el.innerText.trim(); // Texto limpio
+
+            // LOGICA FINAL: Un RUC valido es SOLO digitos y exactamente 11.
+            // Ej: "20123456789".
+            // Si tiene texto como "RUC: 20..." limpiamos eso primero.
+
+            // Extraer solo numeros
+            const nums = text.replace(/\D/g, '');
+
+            // Si no hay 11 numeros, FALTA RUC.
+            if (nums.length !== 11) {
+                console.log("⚠️ Detectado incompleto:", text);
+
+                // Recuperar nombre
+                const contentRow = el.closest(".item-content");
+                if (contentRow) {
+                    const nameEl = contentRow.querySelector(".item-main-name");
+                    if (nameEl) {
+                        pendingItems.push({
+                            name: nameEl.innerText.trim(),
+                            element: el
+                        });
+                    }
+                }
+            }
+        });
+
+        if (pendingItems.length === 0) {
+            alert("El sistema cree que todos los RUCs están completos.\nRevisa la consola (F12) si crees que es error.");
+            return;
+        }
+
+        // Mostrar Modal
+        const modal = document.getElementById("ruc-modal-active");
+        const pBar = document.getElementById("ruc-progress");
+        const pText = document.getElementById("ruc-progress-text");
+        modal.style.display = "flex";
+
+        // Iniciar Streaming SSE
+        const namesCsv = pendingItems.map(i => i.name).join(",");
+        const evtSource = new EventSource(`/sbsview/stream_ruc_updates?names=${encodeURIComponent(namesCsv)}`);
+
+        evtSource.onmessage = function (event) {
+            if (event.data === "close") {
+                evtSource.close();
+                setTimeout(() => { modal.style.display = "none"; }, 500);
+                return;
+            }
+
+            const data = JSON.parse(event.data);
+            pBar.style.width = data.progress + "%";
+            pText.innerText = `${data.progress}% - ${data.nombre}`;
+
+            const item = pendingItems.find(i => i.name === data.nombre);
+            if (item && item.element) {
+                if (data.ruc.includes("NO ENCONTRADO")) {
+                    item.element.innerHTML = `<span style='color:red; font-size:10px'>NO HALLADO</span>`;
+                } else {
+                    item.element.innerHTML = `RUC: ${data.ruc} <i class="fa-solid fa-check-circle" style="color:var(--c-green); margin-left:4px;"></i>`;
+                    item.element.style.background = "#dcfce7";
+                    item.element.style.color = "#166534";
+                }
+            }
+        };
+
+        evtSource.onerror = function (err) {
+            console.error("SSE Error:", err);
+            evtSource.close();
+            modal.style.display = "none";
+        };
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Auto-start suave
+        setTimeout(window.iniciarEscaneo, 1000);
+    });
+</script>
 {% endblock %}
