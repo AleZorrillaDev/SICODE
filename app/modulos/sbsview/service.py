@@ -3,12 +3,23 @@ from bs4 import BeautifulSoup
 import re
 import logging
 from urllib.parse import urljoin
+import urllib3
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "es-PE,es;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1"
+}
 HOME = "https://www.sbs.gob.pe/"
+
+
 
 # ------------------------------------------------------------
 # 🧠 LOGICA DE AGENTE RUC (Deep Scraping)
@@ -40,13 +51,6 @@ def imprimir_listado(nombre: str, items: list):
     """
     Imprime listado en consola. Soporta tanto lista de strings como de objetos (dicts).
     """
-    # The instruction to comment out/remove print statements that output the entire data structure
-    # seems to be misapplied here, as this function's purpose is to print a formatted list.
-    # The provided snippet for modification was also syntactically incorrect and introduced
-    # non-existent variables/functions.
-    # Therefore, I will keep this function as is, as it prints formatted items, not raw data structures.
-    # If the intent was to disable all output from this function, the entire function body
-    # would need to be commented out or replaced with a pass statement.
     print(f"\n--- {nombre} ({len(items)}) ---")
     if not items:
         print("  (Sin resultados)")
@@ -60,9 +64,6 @@ def imprimir_listado(nombre: str, items: list):
         print(f"  {i}. {txt}")
 
 
-# ============================================================
-# ✅ 1) ENTIDADES EN DISOLUCIÓN Y/O LIQUIDACIÓN (MENÚ FINAL)
-# ============================================================
 
 def extraer_menu_entidades_disolucion_liquidacion():
     """
@@ -71,7 +72,8 @@ def extraer_menu_entidades_disolucion_liquidacion():
     resultados = {"Sistema Financiero": {}, "Sistema COOPAC": {}}
 
     try:
-        r = requests.get(HOME, headers=HEADERS, timeout=30)
+        # Usamos requests simple con verify=False para evitar problemas de certificados corporativos
+        r = requests.get(HOME, headers=HEADERS, timeout=15, verify=False)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "lxml")
 
@@ -156,7 +158,15 @@ def extraer_menu_entidades_disolucion_liquidacion():
         print("=======================================================================\n")
 
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error CONEXION SBS: {e}")
+        # RETORNAR ERROR VISIBLE AL USUARIO
+        error_item = {
+            "nombre": "⚠️ ERROR DE CONEXIÓN A SBS",
+            "ruc": "OFFLINE",
+            "razon_social": str(e),
+            "link_sbs": "#"
+        }
+        resultados["Sistema Financiero"]["ERROR DE RED"] = [error_item]
 
     return resultados
 
@@ -172,7 +182,8 @@ def extraer_menu_liquidaciones_concluidas_sistema_financiero():
     resultados = {}
 
     try:
-        r = requests.get(HOME, headers=HEADERS, timeout=30)
+        # Usamos requests simple con verify=False para evitar problemas de certificados corporativos
+        r = requests.get(HOME, headers=HEADERS, timeout=15, verify=False)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "lxml")
 
@@ -252,7 +263,15 @@ def extraer_menu_liquidaciones_concluidas_sistema_financiero():
         print("=============================================================\n")
 
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error CONEXION SBS (Concluidas): {e}")
+        # RETORNAR ERROR VISIBLE (Simulamos una categoría de error)
+        error_item = {
+            "nombre": "⚠️ REVISE SU CONEXIÓN DE INTERNET/PROXY",
+            "ruc": "ERROR",
+            "razon_social": str(e),
+            "link_sbs": "#"
+        }
+        resultados["ERROR DE RED"] = [error_item]
         
     return resultados
 

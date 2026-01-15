@@ -8,7 +8,13 @@ router = APIRouter(
     tags=["sbsview"]
 )
 
-templates = Jinja2Templates(directory=["app/modulos/sbsview/templates", "app/modulos/inicio/templates"])
+from app.core.config import settings
+
+# Usamos la config centralizada para rutas (robusto para .exe)
+SBSVIEW_TEMPLATES = settings.get_template_path("app/modulos/sbsview/templates")
+INICIO_TEMPLATES = settings.get_template_path("app/modulos/inicio/templates")
+
+templates = Jinja2Templates(directory=[SBSVIEW_TEMPLATES, INICIO_TEMPLATES])
 
 @router.get("/")
 async def sbs_monitor(request: Request):

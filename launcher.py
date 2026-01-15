@@ -1,5 +1,6 @@
 import os
 import sys
+import socket
 import threading
 import time
 import webbrowser
@@ -54,31 +55,7 @@ def buscar_icono():
     return None
 
 # --- LÓGICA DE LA INTERFAZ ---
-def start_server():
-    global server_instance, running_thread
-    
-    if running_thread and running_thread.is_alive():
-        return
 
-    btn_start.config(state="disabled")
-    lbl_status.config(text="INICIANDO...", fg="#FFA500") # Naranja
-    root.update()
-
-    # Crear e iniciar el hilo del servidor
-    server_instance = ServerThread(app, host="0.0.0.0", port=8000)
-    server_instance.start()
-    running_thread = server_instance
-
-    # Esperar un momento visualmente y confirmar
-    root.after(1500, confirm_start)
-
-def confirm_start():
-    lbl_status.config(text="● EJECUTANDO", fg="#2ecc71") # Verde
-    btn_stop.config(state="normal")
-    btn_open.config(state="normal")
-    
-    # Opcional: Abrir navegador automáticamente al iniciar
-    # open_browser()
 
 def stop_server():
     global server_instance
@@ -137,7 +114,52 @@ tk.Label(main_frame, text="SERVIDOR SICODE", font=font_title).pack(pady=(0, 20))
 
 # Estado
 lbl_status = tk.Label(main_frame, text="● DETENIDO", font=font_status, fg="#e74c3c")
-lbl_status.pack(pady=(0, 20))
+lbl_status.pack(pady=(0, 10))
+
+# Info de conexión
+lbl_ip = tk.Label(main_frame, text="", font=("Segoe UI", 9), fg="#7f8c8d")
+lbl_ip.pack(pady=(0, 20))
+
+def get_local_ip():
+    try:
+        # Conectar a un DNS público para determinar la IP de salida (no envía datos reales)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+# --- LÓGICA DE LA INTERFAZ ---
+def start_server():
+    global server_instance, running_thread
+    
+    if running_thread and running_thread.is_alive():
+        return
+
+    btn_start.config(state="disabled")
+    lbl_status.config(text="INICIANDO...", fg="#FFA500") # Naranja
+    root.update()
+
+    # Crear e iniciar el hilo del servidor en 0.0.0.0 para acceso LAN
+    server_instance = ServerThread(app, host="0.0.0.0", port=8000)
+    server_instance.start()
+    running_thread = server_instance
+
+    # Esperar un momento visualmente y confirmar
+    root.after(1500, confirm_start)
+
+def confirm_start():
+    local_ip = get_local_ip()
+    url = f"http://{local_ip}:8000"
+    
+    lbl_status.config(text="● EJECUTANDO", fg="#2ecc71") # Verde
+    lbl_ip.config(text=f"Disponible en:\n{url}")
+    
+    btn_stop.config(state="normal")
+    btn_open.config(state="normal")
+
 
 # Botones
 btn_frame = tk.Frame(main_frame)

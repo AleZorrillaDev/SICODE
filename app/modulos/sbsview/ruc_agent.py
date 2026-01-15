@@ -32,38 +32,37 @@ from bs4 import BeautifulSoup
 import urllib.parse
 
 def buscar_ruc_en_web(nombre_entidad: str) -> Optional[str]:
-    # ESTRATEGIA: "Francotirador" a DatosPeru.org
-    # Es un directorio ligero que no bloquea requests sencillos.
+    # ESTRATEGIA: Google Search (Directo)
+    # Preferencia del Usuario. Volumen bajo de datos.
     
     nombre_clean = nombre_entidad.upper().strip()
-    # Codificamos URL (espacios -> %20, etc)
-    encoded_name = urllib.parse.quote(nombre_clean)
+    query = f"RUC {nombre_clean}"
+    encoded_query = urllib.parse.quote(query)
     
-    url = f"https://www.datosperu.org/buscador_empresas.php?buscar={encoded_name}"
-    logger.info(f"🔎 Consultando DatosPeru: {url}")
+    url = f"https://www.google.com/search?q={encoded_query}"
+    
+    logger.info(f"🔎 Consultando Google: {query}")
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-        # Fingimos ser Googlebot, suele abrir todas las puertas
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Referer": "https://www.google.com/"
     }
 
     try:
-        resp = requests.get(url, headers=headers, timeout=10)
+        # verify=False indispensable
+        resp = requests.get(url, headers=headers, timeout=15, verify=False)
         
         if resp.status_code == 200:
-            # DatosPeru devuelve una lista. El RUC suele estar en los titulos de los resultados.
-            # Buscamos patron 20xxxxxxxxxxx
+            # Buscamos patrones de RUC en todo el HTML devuelto
             match = re.search(r"(20\d{9})", resp.text)
             if match:
                 logger.info(f"✅ RUC Encontrado: {match.group(1)}")
                 return match.group(1)
-            
-            # Si no hay match en el texto crudo, es que no hay resultados.
         else:
-            logger.warning(f"DatosPeru status {resp.status_code}")
+            logger.warning(f"Google status {resp.status_code}")
 
     except Exception as e:
-        logger.error(f"Error DatosPeru: {e}")
+        logger.error(f"Error Google: {e}")
         return None
 
     return None
@@ -74,15 +73,23 @@ def obtener_ruc_inteligente(nombre_entidad: str) -> str:
     2. Si no esta, Retorna 'PENDING' para que el frontend sepa que debe buscarlo.
        (No buscamos aqui para no bloquear el renderizado inicial).
     """
-    cache = load_cache()
-    
+    return "PENDING" # Marcador para el frontend
+
+def obtener_ruc_inteligente(nombre_entidad: str) -> str:
+    """
+    1. Busca en Cache.
+    2. Si no esta, Retorna 'PENDING' para que el frontend sepa que debe buscarlo.
+       (No buscamos aqui para no bloquear el renderizado inicial).
+    """
     # Normalizamos clave
     key = nombre_entidad.strip().upper()
-    
+
+    # 1. Cache
+    cache = load_cache()
     if key in cache:
         return cache[key]
         
-    return "PENDING" # Marcador para el frontend
+    return "PENDING"
 
 def buscar_y_guardar_ruc(nombre_entidad: str) -> str:
     """
@@ -92,10 +99,20 @@ def buscar_y_guardar_ruc(nombre_entidad: str) -> str:
     cache = load_cache()
     key = nombre_entidad.strip().upper()
     
-    if key in cache and cache[key] != "PENDING":
-        return cache[key]
+    # Si esta en cache, verificamos si es un valor valido o un error previo
+    if key in cache:
+        val = cache[key]
+        # Si el valor es un RUC valido (numerico), lo devolvemos
+        if val.isdigit() and len(val) == 11:
+            return val
+        # Si es PENDING, NO HALLADO o ERROR, dejamos pasar para RE-INTENTAR
+        # (Esto arregla que se quede pegado en errores pasados)
     
-    # Buscamos
+    # Validar si es un mensaje de error del sistema
+    if key.startswith("⚠️") or "ERROR" in key:
+        return "ERROR"
+    
+    # Buscamos en web (ultima ratio)
     ruc = buscar_ruc_en_web(key)
     
     if ruc:
