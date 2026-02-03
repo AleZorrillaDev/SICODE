@@ -1,132 +1,373 @@
 {% extends "base.html" %}
 
-<!--
-    AUTODOC TEMPLATE PRINCIPAL
-    ---------------------------
-    Aquí definimos la estructura HTML del módulo.
-    Extendemos de "base.html" para mantener la cabecera y estilos globales de la app.
--->
-
-{% block title %}AutoDoc - Generador de Documentos{% endblock %}
+{% block title %}AutoDoc - Masivo{% endblock %}
 
 {% block head_extra %}
-<!-- Cargamos los estilos específicos de este módulo -->
-<link rel="stylesheet" href="/static/css/autodoc.css">
-<!-- Librerías externas para vista previa de DOCX (Opcional, usado si implementamos previsualización local) -->
-<script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
-<script src="https://unpkg.com/docx-preview/dist/docx-preview.min.js"></script>
+<style>
+    :root {
+        --primary: #2563eb;
+        --surface: #ffffff;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+    }
+
+    /* Override or adjustments for the content area */
+    .content-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* Toolbar Section */
+    .toolbar-section {
+        background: var(--surface);
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* Table Section */
+    .table-section {
+        flex: 1;
+        overflow: auto;
+        padding: 1rem;
+        background: #f8fafc;
+    }
+
+    .table-wrapper {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: auto;
+        max-height: 100%;
+    }
+
+    table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        min-width: 2500px;
+    }
+
+    th {
+        background-color: #f1f5f9;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        padding: 12px;
+        text-align: left;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid var(--border);
+    }
+
+    td {
+        border-bottom: 1px solid var(--border);
+        border-right: 1px solid #f1f5f9;
+        padding: 0;
+    }
+
+    td input {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        outline: none;
+        font-family: inherit;
+        background: transparent;
+    }
+
+    td input:focus {
+        background: #e0f2fe;
+    }
+
+    .col-index {
+        position: sticky;
+        left: 0;
+        background: #f8fafc;
+        z-index: 9;
+        text-align: center;
+        width: 50px;
+        border-right: 2px solid var(--border);
+    }
+
+    .col-vcto input {
+        color: #94a3b8;
+        font-style: italic;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: white;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(2px);
+        display: none;
+        z-index: 9999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e2e8f0;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 {% endblock %}
 
-<!-- 
-    Bloque Titulo del Módulo 
-    Esto sobrescribe el espacio en la barra superior para mostrar "AutoDoc"
--->
 {% block module_title %}
 <div class="module-header-title">
     <span class="module-name">AutoDoc</span>
     <span class="separator">|</span>
-    <span class="module-desc">Generador de Documentos</span>
+    <span class="module-desc">Generador Masivo</span>
 </div>
 {% endblock %}
 
 {% block content %}
-<!-- CONTENIDO PRINCIPAL (WIZARD) -->
-<!-- Usamos un contenedor "Wizard" que permite navegar paso a paso -->
-<div class="wizard-container">
 
-    <!-- PASO 1: SELECCIONAR TIPO DE DOCUMENTO -->
-    <!-- Clase 'active' indica que este es el paso visible inicial -->
-    <div id="step-1" class="wizard-step active">
-        <div class="step-header">
-            <div class="step-title">¿Qué documento desea generar?</div>
-            <div class="step-subtitle">Seleccione el tipo de documento para iniciar el proceso</div>
-        </div>
+<!-- Loading -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <p style="margin-top: 1rem; color: #475569; font-weight: 500;">Procesando documentos...</p>
+</div>
 
-        <!-- Grid de tarjetas generado dinámicamente por JS -->
-        <div class="doc-grid" id="doc-grid-container">
-            <!-- Populated by JS -->
-        </div>
+<div class="content-wrapper">
+    <!-- Toolbar -->
+    <div class="toolbar-section">
+        <button class="btn btn-primary" onclick="addRow()"><i class="fa-solid fa-plus"></i> Fila</button>
+        <button class="btn btn-secondary" onclick="clearTable()"><i class="fa-solid fa-trash"></i> Limpiar</button>
+        <button class="btn btn-secondary" onclick="addExampleData()">Ejemplo</button>
+
+        <div style="flex: 1;"></div>
+        <span style="color: #64748b; font-size: 0.9rem;">Filas: <b id="rowCount">0</b></span>
+
+        <button class="btn btn-success" onclick="generarDocumentos()">
+            <i class="fa-solid fa-file-zipper"></i> GENERAR DESCARGA
+        </button>
     </div>
 
-    <!-- PASO 2: SELECCIONAR PLANTILLA ESPECÍFICA -->
-    <div id="step-2" class="wizard-step">
-        <div class="step-header">
-            <!-- Botón Atrás -->
-            <button class="btn-secondary" onclick="app.goToStep(1)" style="float: left;">
-                <i class="fa-solid fa-arrow-left"></i> Atrás
-            </button>
-            <div class="step-title">Seleccione el tipo de caso</div>
-            <div class="step-subtitle">Busque por código o nombre del caso específico</div>
-        </div>
-
-        <div class="case-selector">
-            <div class="case-search">
-                <input type="text" placeholder="🔍 Buscar caso (ej. 5214, Pago indebido...)"
-                    onkeyup="app.filterCases(this.value)">
-            </div>
-            <!-- Lista de resultados generada por JS -->
-            <div class="case-list" id="case-list-container">
-                <!-- Populated by JS -->
-            </div>
-        </div>
-    </div>
-
-    <!-- PASO 3: LLENADO Y VISTA PREVIA -->
-    <div id="step-3" class="wizard-step" style="height: 100%;">
-        <div class="step-header"
-            style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <button class="btn-secondary" onclick="app.goToStep(2)">
-                    <i class="fa-solid fa-arrow-left"></i> Volver
-                </button>
-                <div>
-                    <div class="step-title" style="margin: 0; font-size: 20px;">Completar Información</div>
-                    <div class="step-subtitle" id="current-doc-label">Documento: ...</div>
-                </div>
-            </div>
-
-            <!-- Botones de Acción Final -->
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-secondary" onclick="window.print()">🖨️ Imprimir</button>
-                <button class="btn-primary" onclick="app.downloadPDF()">⬇️ Descargar PDF</button>
-            </div>
-        </div>
-
-        <!-- Área de Trabajo Dividida (Split View) -->
-        <div class="workspace">
-            <!-- IZQUIERDA: Formulario Dinámico -->
-            <div class="form-panel">
-                <div class="form-content">
-                    <!-- El formulario se inyecta aquí según el Schema del documento seleccionado -->
-                    <div style="text-align: center; color: #999; margin-top: 50px;">
-                        Cargando formulario...
-                    </div>
-                </div>
-            </div>
-
-            <!-- DERECHA: Vista Previa PDF -->
-            <div class="preview-panel">
-                <div class="preview-toolbar">
-                    <div class="preview-status">
-                        <span class="status-dot"></span> Esperando datos...
-                    </div>
-                    <div class="zoom-controls">
-                        <span style="font-size:12px; color: white;">Vista Previa PDF</span>
-                    </div>
-                </div>
-
-                <div class="preview-canvas">
-                    <!-- Aquí se incrusta el iframe con el PDF generado -->
-                    <div style="color: #ccc;">Seleccione una plantilla para ver la vista previa</div>
-                </div>
-            </div>
+    <!-- Table -->
+    <div class="table-section">
+        <div class="table-wrapper">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th class="col-index">#</th>
+                        <th>RUC</th>
+                        <th>RAZON_SOCIAL</th>
+                        <th>DOMICILIO</th>
+                        <th>NUM_EXP</th>
+                        <th>FECHA_EXP</th>
+                        <th>DIAS</th>
+                        <th>VCTO (A)</th>
+                        <th>BOLETA</th>
+                        <th>NUM_ORDEN</th>
+                        <th>FECHA_BOLETA</th>
+                        <th>MONTO</th>
+                        <th>PERIODO</th>
+                        <th>COD_ERR</th>
+                        <th>TRIB_ERR</th>
+                        <th>COD_COR</th>
+                        <th>TRIB_COR</th>
+                        <th>REIMPUTACION</th>
+                        <th>RI</th>
+                        <th>VALOR_VINCULADO</th>
+                        <th>EXP_F194</th>
+                        <th>ESQUELA</th>
+                        <th>OBSV</th>
+                        <th>CONTEO</th>
+                        <th>ESTADO</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- JS fills this -->
+                </tbody>
+            </table>
         </div>
     </div>
-
 </div>
 {% endblock %}
 
 {% block scripts %}
-<!-- Cargamos la lógica Frontend al final para asegurar el rendimiento -->
-<script src="/static/js/autodoc.js"></script>
+<script>
+    const COLUMNS = [
+        "RUC", "RAZON_SOCIAL", "DOMICILIO", "NUM_EXP", "FECHA_EXP", "DIAS", "VCTO",
+        "BOLETA", "NUM_ORDEN", "FECHA_BOLETA", "MONTO", "PERIODO", "COD_ERR", "TRIB_ERR",
+        "COD_COR", "TRIB_COR", "REIMPUTACION", "RI", "VALOR_VINCULADO", "EXP_F194",
+        "ESQUELA", "OBSV", "CONTEO", "ESTADO"
+    ];
+
+    function createInput(key) {
+        const input = document.createElement("input");
+        input.dataset.key = key;
+        input.setAttribute("autocomplete", "off");
+
+        if (key.includes("FECHA")) input.type = "date";
+        else if (["DIAS", "MONTO", "VALOR_VINCULADO", "CONTEO"].includes(key)) input.type = "number";
+        else input.type = "text";
+
+        if (key === "VCTO") {
+            input.readOnly = true;
+            input.parentElement?.classList.add("col-vcto");
+        }
+        return input;
+    }
+
+    function addRow(data = null) {
+        const tbody = document.querySelector("#dataTable tbody");
+        const tr = document.createElement("tr");
+
+        // Index
+        const tdIndex = document.createElement("td");
+        tdIndex.className = "col-index";
+        tdIndex.innerText = tbody.children.length + 1;
+        tr.appendChild(tdIndex);
+
+        COLUMNS.forEach(col => {
+            const td = document.createElement("td");
+            if (col === "VCTO") td.className = "col-vcto";
+
+            const input = createInput(col);
+            if (data && data[col]) input.value = data[col];
+
+            td.appendChild(input);
+            tr.appendChild(td);
+        });
+
+        // Delete Action
+        const tdAction = document.createElement("td");
+        tdAction.style.textAlign = "center";
+        tdAction.style.width = "50px";
+        const btn = document.createElement("button");
+        btn.innerHTML = "&times;";
+        btn.style.color = "red";
+        btn.style.border = "none";
+        btn.style.background = "transparent";
+        btn.style.fontSize = "1.2rem";
+        btn.style.cursor = "pointer";
+        btn.onclick = () => { tr.remove(); updateIndexes(); };
+        tdAction.appendChild(btn);
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+        updateIndexes();
+
+        const wrapper = document.querySelector(".table-wrapper");
+        wrapper.scrollTop = wrapper.scrollHeight;
+    }
+
+    function updateIndexes() {
+        const rows = document.querySelectorAll("#dataTable tbody tr");
+        rows.forEach((tr, idx) => {
+            tr.querySelector(".col-index").innerText = idx + 1;
+        });
+        document.getElementById("rowCount").innerText = rows.length;
+    }
+
+    function clearTable() {
+        if (confirm("¿Limpiar todo?")) {
+            document.querySelector("#dataTable tbody").innerHTML = "";
+            addRow();
+        }
+    }
+
+    function addExampleData() {
+        addRow({
+            "RUC": "20600000001", "RAZON_SOCIAL": "EMPRESA DEMO S.A.C.", "DOMICILIO": "AV. TEST 123",
+            "FECHA_EXP": "2024-01-15", "DIAS": "10", "ESQUELA": "NO", "REIMPUTACION": "NO"
+        });
+    }
+
+    async function generarDocumentos() {
+        const rows = [];
+        const trs = document.querySelectorAll("#dataTable tbody tr");
+        if (trs.length === 0) return alert("Agrega filas primero");
+
+        trs.forEach(tr => {
+            const rowData = {};
+            tr.querySelectorAll("input").forEach(input => {
+                rowData[input.dataset.key] = input.value;
+            });
+            rows.push(rowData);
+        });
+
+        document.getElementById("loading-overlay").style.display = "flex";
+
+        try {
+            const response = await fetch("/autodoc/generar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(rows)
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "Documentos_AutoDoc_" + new Date().getTime() + ".zip";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert("Error generando documentos");
+            }
+        } catch (e) {
+            alert("Error de red");
+        } finally {
+            document.getElementById("loading-overlay").style.display = "none";
+        }
+    }
+
+    // Init
+    window.onload = () => addRow();
+
+</script>
 {% endblock %}

@@ -39,6 +39,7 @@ app.include_router(signa_router)
 app.include_router(autodoc_router)
 app.include_router(sbsview_router)
 
+
 if __name__ == "__main__":
     # Permite ejecutar el script directamente para desarrollo
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
