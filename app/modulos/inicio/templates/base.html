@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Portal Corporativo{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Estilos Globales -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- HEADER SIMPLE -->
+        <header class="main-header">
+            <div class="header-content">
+                <div class="brand-area">
+                    <!-- Flecha retorno inicio -->
+                    {% block back_button %}
+                    <a href="/"
+                        style="margin-right: 15px; color: #555; font-size: 20px; display: flex; align-items: center; text-decoration: none;"
+                        title="Volver al Inicio">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    {% endblock %}
+
+                    <a href="/" style="text-decoration: none; display: flex; align-items: center;">
+                        <img src="/static/assets/iconSunat.svg" alt="Logo" class="brand-logo">
+                    </a>
+                    <!-- <span class="brand-name">Portal</span> Eiminado por solicitud -->
+
+                    <!-- Título del módulo (opcional) -->
+                    {% block module_title %}{% endblock %}
+                </div>
+
+                <div class="user-area">
+                    <div class="user-details">
+                        {% if request.state.user %}
+                            <span class="user-name">{{ request.state.user.full_name }}</span>
+                            <span class="user-role">{{ request.state.user.role }}</span>
+                        {% else %}
+                            <span class="user-name">Invitado</span>
+                            <span class="user-role"><a href="/login">Iniciar Sesión</a></span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Avatar con onclick -->
+                    <div class="user-avatar" onclick="toggleProfileDropdown()">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+
+                    <!-- Dropdown Content -->
+                    <div id="profileDropdown" class="dropdown-menu">
+                        <a href="/profile" class="dropdown-item"><i class="fa-solid fa-user-gear"></i> Mi Perfil</a>
+                        <a href="/settings" class="dropdown-item"><i class="fa-solid fa-wrench"></i> Ajustes</a>
+                        {% if request.state.user.role in ['Administrador', 'Supervisor'] %}
+                        <a href="/admin/users" class="dropdown-item"><i class="fa-solid fa-users-gear"></i> Gestión de Usuarios</a>
+                        {% endif %}
+                        <a href="/logout" class="dropdown-item" style="color: var(--accent-red);"><i
+                                class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENEDOR PRINCIPAL -->
+        <main class="main-content-area">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+
+    <!-- Script Inline para Dropdown -->
+    <script>
+        function toggleProfileDropdown() {
+            const dd = document.getElementById('profileDropdown');
+            dd.classList.toggle('show');
+        }
+
+        // Cerrar al hacer click fuera
+        window.addEventListener('click', function (e) {
+            if (!e.target.closest('.user-avatar') && !e.target.closest('.dropdown-menu')) {
+                document.getElementById('profileDropdown').classList.remove('show');
+            }
+        });
+    </script>
+
+    <!-- UNIVERSAL MODAL -->
+    <div id="uiModal" class="uimodal-hidden">
+        <div class="uimodal-box">
+            <div id="uiModalIcon" class="uimodal-icon"></div>
+            <p id="uiModalMsg"></p>
+            <button id="uiModalBtn">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- Scripts Globales -->
+    <script src="/static/js/main.js"></script>
+
+    {% block scripts %}{% endblock %}
+
+</body>
+
+</html>

@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+
+{% block title %}Piloto - Cruce de Deuda vs Pagos{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/piloto.css" />
+<script src="https://unpkg.com/lucide@latest"></script>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">Piloto</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Cruce de Deuda vs Pagos</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="piloto-wrapper">
+    
+    <!-- TABS NAVIGATION (KEEPING NEW DESIGN) -->
+    <div class="piloto-tabs">
+        <div class="tab-item active" onclick="switchTab('FRACC')" id="tab-FRACC">
+            <i data-lucide="percent" width="18"></i>
+            <span>Fraccionamiento (Art. 36)</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('RRAF')" id="tab-RRAF">
+            <i data-lucide="refresh-cw" width="18"></i>
+            <span>Refinanciamiento (RRAF)</span>
+        </div>
+    </div>
+
+    <!-- LITERAL ORIGINAL CONTENT STRUCTURE -->
+    <div class="content-wrapper">
+        <div class="grid-container">
+
+            <!-- CARD 1: CARGAR ARCHIVOS (LITERAL CLASSES) -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-header-icon">
+                        <i data-lucide="upload-cloud" width="16" style="color:white;"></i>
+                    </div>
+                    <div class="card-header-text">
+                        <h2 id="card-upload-title">Cargar Archivos Excel - Fraccionamiento</h2>
+                        <p>Archivos requeridos para el procesamiento</p>
+                    </div>
+                </div>
+
+                <div class="upload-grid">
+                    <!-- DEUDA -->
+                    <div class="upload-box upload-box-pink" id="drop_deuda" onclick="document.getElementById('fileDeuda').click()">
+                        <span class="required-badge">Requerido</span>
+                        <div class="upload-box-content" id="normal_deuda">
+                            <div class="upload-icon upload-icon-pink">
+                                <i data-lucide="file-text" width="16" style="color:#ae0d41;"></i>
+                            </div>
+                            <p class="upload-title">Deuda Acogida</p>
+                            <div class="upload-format">.xlsx o .xls</div>
+                            <button class="upload-button upload-button-pink">
+                                <i data-lucide="upload" width="12"></i>
+                                Seleccionar archivo
+                            </button>
+                            <p class="upload-drag-text">o arrastra aquí</p>
+                        </div>
+                        <div class="upload-loaded" id="loaded_deuda" style="display:none;">
+                            <div class="loaded-icon">
+                                <i data-lucide="check" width="24"></i>
+                            </div>
+                            <p class="loaded-title">Cargado</p>
+                            <p class="loaded-filename" id="filenameDeuda">Archivo</p>
+                            <button class="loaded-change">
+                                <i data-lucide="x" width="12"></i> Cambiar
+                            </button>
+                        </div>
+                        <input type="file" id="fileDeuda" accept=".xlsx,.xls" hidden onchange="handleFileChange('Deuda')">
+                    </div>
+
+                    <!-- PAGOS -->
+                    <div class="upload-box upload-box-blue" id="drop_pagos" onclick="document.getElementById('filePagos').click()">
+                        <span class="required-badge">Requerido</span>
+                        <div class="upload-box-content" id="normal_pagos">
+                            <div class="upload-icon upload-icon-blue">
+                                <i data-lucide="file-check-2" width="16" style="color:#0163ac;"></i>
+                            </div>
+                            <p class="upload-title">Pagos</p>
+                            <div class="upload-format">.xlsx o .xls</div>
+                            <button class="upload-button upload-button-blue">
+                                <i data-lucide="upload" width="12"></i>
+                                Seleccionar archivo
+                            </button>
+                            <p class="upload-drag-text">o arrastra aquí</p>
+                        </div>
+                        <div class="upload-loaded" id="loaded_pagos" style="display:none;">
+                            <div class="loaded-icon">
+                                <i data-lucide="check" width="24"></i>
+                            </div>
+                            <p class="loaded-title">Cargado</p>
+                            <p class="loaded-filename" id="filenamePagos">Archivo</p>
+                            <button class="loaded-change">
+                                <i data-lucide="x" width="12"></i> Cambiar
+                            </button>
+                        </div>
+                        <input type="file" id="filePagos" accept=".xlsx,.xls" hidden onchange="handleFileChange('Pagos')">
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <i data-lucide="info" width="14" style="color:#2b51da;"></i>
+                    <p>Ambos archivos deben estar en formato Excel con las columnas especificadas.</p>
+                </div>
+            </div>
+
+            <!-- CARD 2: BÚSQUEDA (LITERAL CLASSES) -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-header-icon">
+                        <i data-lucide="search" width="16" style="color:white;"></i>
+                    </div>
+                    <div class="card-header-text">
+                        <h2 id="card-search-title">Búsqueda y Filtros - Fraccionamiento</h2>
+                        <p>Encuentra información específica</p>
+                    </div>
+                </div>
+
+                <div class="search-section">
+                    <div class="search-header">
+                        <i data-lucide="file-edit" width="16"></i>
+                        <div class="search-label">Búsqueda por Número RIA</div>
+                    </div>
+                    <div class="search-input-group">
+                        <input type="text" id="riaInput" placeholder="Ingrese número RIA..." class="search-input">
+                        <button class="search-button" onclick="startProcessing()">
+                            <i data-lucide="search" width="14"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="monto_info" class="monto-box" style="display:none;">
+                        <span class="monto-label">Monto Acogido: <span id="val-acogido" class="monto-val">S/ 0</span></span>
+                        <span class="monto-label">Monto Total: <span id="val-total" class="monto-val">S/ 0</span></span>
+                    </div>
+
+                    <button class="export-button" onclick="downloadExcel()" id="btnDownload" disabled>
+                        Exportar Excel
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RESUMEN (LITERAL CLASSES) -->
+        <div id="resumen_container" class="resumen-grid"></div>
+
+        <!-- TABLA (LITERAL CLASSES) -->
+        <div class="table-card card">
+            <div class="table-scroll">
+                <table id="result_table">
+                    <thead>
+                        <tr id="thead"></tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+            <div id="empty-msg" style="padding:40px; color:#666; text-align:center;">Sin resultados.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Loader -->
+<div id="loaderOverlay" class="loader-overlay" style="display: none;">
+    <div class="loader-content" style="text-align: center;">
+        <div class="spinner"></div>
+        <p>Procesando cruce de información...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- MEMORIA TEMPORAL ---
+    let currentModule = 'FRACC';
+    let archivoMemoria = {
+        FRACC: { deuda: null, pagos: null },
+        RRAF: { deuda: null, pagos: null }
+    };
+    let resultadoMemoria = {
+        FRACC: { ria: "", data: [], summary: null, filter: null, file_id: null },
+        RRAF: { ria: "", data: [], summary: null, filter: null, file_id: null }
+    };
+
+    let currentData = [];
+    let currentFileId = null;
+    let currentFilter = null;
+    let lastSummary = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+
+    function switchTab(mod) {
+        saveCurrentState();
+        currentModule = mod;
+        
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        document.getElementById(`tab-${mod}`).classList.add('active');
+        
+        const label = mod === 'FRACC' ? 'Fraccionamiento' : 'Refinanciamiento';
+        document.getElementById('card-upload-title').innerText = `Cargar Archivos Excel - ${label}`;
+        document.getElementById('card-search-title').innerText = `Búsqueda y Filtros - ${label}`;
+        
+        restoreState(mod);
+    }
+
+    function saveCurrentState() {
+        resultadoMemoria[currentModule] = {
+            ria: document.getElementById('riaInput').value,
+            data: currentData,
+            summary: lastSummary,
+            filter: currentFilter,
+            file_id: currentFileId
+        };
+    }
+
+    function restoreState(mod) {
+        const fileMem = archivoMemoria[mod];
+        const resMem = resultadoMemoria[mod];
+
+        updateFileUI('Deuda', fileMem.deuda);
+        updateFileUI('Pagos', fileMem.pagos);
+
+        document.getElementById('riaInput').value = resMem.ria;
+        currentData = resMem.data || [];
+        currentFileId = resMem.file_id;
+        currentFilter = resMem.filter;
+        lastSummary = resMem.summary;
+
+        if (currentData.length > 0) {
+            renderResults({ summary: lastSummary, data: currentData, file_id: currentFileId }, true);
+        } else {
+            clearResultsUI();
+        }
+        lucide.createIcons();
+    }
+
+    function updateFileUI(type, file) {
+        const normal = document.getElementById(`normal_${type.toLowerCase()}`);
+        const loaded = document.getElementById(`loaded_${type.toLowerCase()}`);
+        const filename = document.getElementById(`filename${type}`);
+        const zone = document.getElementById(`drop_${type.toLowerCase()}`);
+
+        if (file) {
+            normal.style.display = 'none';
+            loaded.style.display = 'flex';
+            filename.innerText = file.name;
+            zone.classList.add('loaded');
+        } else {
+            normal.style.display = 'flex';
+            loaded.style.display = 'none';
+            zone.classList.remove('loaded');
+        }
+    }
+
+    function clearResultsUI() {
+        document.getElementById('resumen_container').innerHTML = '';
+        document.getElementById('monto_info').style.display = 'none';
+        document.getElementById('btnDownload').disabled = true;
+        document.getElementById('thead').innerHTML = '';
+        document.getElementById('tbody').innerHTML = '';
+        document.getElementById('empty-msg').style.display = 'block';
+    }
+
+    function handleFileChange(type) {
+        const input = document.getElementById(`file${type}`);
+        if (input.files.length > 0) {
+            const file = input.files[0];
+            archivoMemoria[currentModule][type.toLowerCase()] = { name: file.name, file: file };
+            updateFileUI(type, file);
+            lucide.createIcons();
+        }
+    }
+
+    async function startProcessing() {
+        const mem = archivoMemoria[currentModule];
+        const ria = document.getElementById('riaInput').value;
+
+        if (!mem.deuda || !mem.pagos) {
+            alert("⚠️ Por favor cargue ambos archivos Excel.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('deuda_file', mem.deuda.file);
+        formData.append('pagos_file', mem.pagos.file);
+        formData.append('modulo', currentModule);
+        formData.append('ria_num', ria);
+
+        document.getElementById('loaderOverlay').style.display = 'flex';
+
+        try {
+            const response = await fetch('/piloto/process', {
+                method: 'POST',
+                body: formData
+            });
+
+            const res = await response.json();
+            
+            if (res.status === 'success') {
+                lastSummary = res.summary;
+                renderResults(res);
+            } else {
+                alert("Error: " + res.message);
+            }
+        } catch (e) {
+            alert("Error crítico en el servidor.");
+        } finally {
+            document.getElementById('loaderOverlay').style.display = 'none';
+        }
+    }
+
+    function renderResults(res, isRestoring = false) {
+        const { summary, data, file_id } = res;
+        currentData = data;
+        currentFileId = file_id;
+        
+        const container = document.getElementById('resumen_container');
+        container.innerHTML = '';
+        
+        addFilterBtn(container, 'Total', 'ALL', summary.total);
+        if (currentModule === 'FRACC') {
+            addFilterBtn(container, 'Pago Fraccionamiento', 'PAGO FRACCIONAMIENTO', summary.pagos_fracc);
+            addFilterBtn(container, 'Pago Deuda Acogida', 'PAGO DEUDA ACOGIDA (RIA)', summary.pagos_deuda);
+        } else {
+            addFilterBtn(container, 'Pago RRAF', 'PAGO RRAF', summary.pagos_rraf);
+            addFilterBtn(container, 'Pago Deuda Acogida', 'PAGO DEUDA ACOGIDA (RRAF)', summary.pagos_deuda);
+        }
+        addFilterBtn(container, 'Pagos Sueltos', 'PAGO SUELTO', summary.pagos_sueltos);
+
+        const mInfo = document.getElementById('monto_info');
+        mInfo.style.display = 'flex';
+        document.getElementById('val-acogido').innerText = `S/ ${summary.monto_acogido.toLocaleString('es-PE')}`;
+        document.getElementById('val-total').innerText = `S/ ${summary.monto_total.toLocaleString('es-PE')}`;
+
+        document.getElementById('btnDownload').disabled = false;
+        document.getElementById('empty-msg').style.display = data.length > 0 ? 'none' : 'block';
+        
+        filterTable(isRestoring ? currentFilter : null);
+
+        if (isRestoring && currentFilter) {
+            document.querySelectorAll('.btn-filter').forEach(btn => {
+                if (btn.innerText.includes(currentFilter)) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+    }
+
+    function addFilterBtn(container, label, filter, count) {
+        const btn = document.createElement('button');
+        btn.className = `btn-filter ${filter === (currentFilter || 'ALL') ? 'active' : ''}`;
+        btn.innerText = `${label}: ${count}`;
+        btn.onclick = () => {
+            document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = filter === 'ALL' ? null : filter;
+            filterTable(currentFilter);
+        };
+        container.appendChild(btn);
+    }
+
+    function filterTable(filter) {
+        const filtered = filter ? currentData.filter(r => (r.TipoCruce || "").toUpperCase().includes(filter)) : currentData;
+        
+        const thead = document.getElementById('thead');
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+        thead.innerHTML = ''; 
+
+        if (filtered.length > 0) {
+            Object.keys(filtered[0]).forEach(k => {
+                const th = document.createElement('th');
+                th.innerText = k;
+                thead.appendChild(th);
+            });
+
+            filtered.forEach(row => {
+                const tr = document.createElement('tr');
+                const tipo = (row.TipoCruce || "").toUpperCase();
+                
+                if (tipo.includes("DEUDA ACOGIDA")) tr.className = 'row-deuda';
+                else if (tipo.includes("FRACCIONAMIENTO")) tr.className = 'row-fracc';
+                else if (tipo.includes("RRAF")) tr.className = 'row-rraf';
+                else if (tipo.includes("SUELTO")) tr.className = 'row-suelto';
+
+                Object.keys(row).forEach(k => {
+                    const td = document.createElement('td');
+                    let val = row[k];
+                    if (typeof val === 'number') val = val.toLocaleString('es-PE');
+                    td.innerText = val ?? '-';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    function downloadExcel() {
+        if (currentFileId) window.location.href = `/piloto/download/${currentFileId}`;
+    }
+</script>
+{% endblock %}

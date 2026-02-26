@@ -1,0 +1,653 @@
+{% extends "base.html" %}
+
+{% block title %}AutoDoc - Generador Masivo{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/autodoc.css?v=2" />
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<!-- SheetJS -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<!-- Font Awesome (If not in base) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">AutoDoc</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Generador Documental Masivo</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="autodoc-wrapper">
+    <!-- Toolbar -->
+    <div class="autodoc-toolbar">
+        <div class="header-left">
+            <h1>Gestión Documental</h1>
+            <p>Generación Masiva y Control de Expedientes</p>
+        </div>
+        <div class="header-actions">
+            <button onclick="downloadTemplate()" class="btn btn-secondary">
+                <i data-lucide="download" width="16"></i>
+                Descargar Plantilla
+            </button>
+            <label class="btn btn-primary-alt">
+                <i data-lucide="upload" width="16"></i>
+                Importar Excel
+                <input type="file" accept=".xlsx,.xls" onchange="handleFileUpload(event)" hidden>
+            </label>
+            <button onclick="addRow()" class="btn btn-primary">
+                <i data-lucide="plus" width="16"></i>
+                Agregar
+            </button>
+            <button onclick="generateDocuments()" class="btn btn-success">
+                <i data-lucide="file-check" width="16"></i>
+                Generar
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="autodoc-container-inner">
+        <div id="document-list" class="document-list">
+            <!-- Rows will be injected here by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state hidden">
+            <div class="empty-icon">
+                <i data-lucide="folder-open"></i>
+            </div>
+            <h3>No hay documentos registrados</h3>
+            <p>Comienza agregando un nuevo registro manual o importando tu Excel de trabajo.</p>
+            <button onclick="addRow()" class="btn btn-primary" style="margin-top: 15px;">
+                <i data-lucide="plus"></i>
+                Crear primer registro
+            </button>
+        </div>
+
+        <!-- Summary Footer -->
+        <div id="summary-footer" class="summary-footer hidden">
+            <div class="summary-stats">
+                <span>TOTAL: <strong id="total-docs">0</strong></span>
+                <span style="color: #e0e0e0;">|</span>
+                <span class="text-green">LISTOS: <strong id="completed-docs">0</strong></span>
+                <span class="text-orange">PENDIENTES: <strong id="pending-docs">0</strong></span>
+            </div>
+            <span class="version-text">AutoDoc Engine v2.1</span>
+        </div>
+    </main>
+</div>
+<!-- Preview Modal -->
+    <div id="preview-modal" class="modal-overlay hidden" onclick="if(event.target === this) closePreview()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="eye"></i> Vista Previa del Documento
+                </div>
+                <button class="btn-icon-round" onclick="closePreview()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="paper-content" class="paper-preview">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// -- Constants --
+const TIPO_PLANTILLA_OPTIONS = [
+  'CODIGO NO TRIBUTARIO',
+  'PAGO CON ERROR'
+];
+
+const SUBTIPO_OPTIONS = {
+  'CODIGO NO TRIBUTARIO': ['5211', '5214'],
+  'PAGO CON ERROR': [
+    'DEUDA NO REGISTRADA A LA FECHA DE PAGO',
+    'PAGO CON ERROR ATENDIDO',
+    'PAGO CON ERROR AUTOMATICO O RELIQUIDADO',
+    'PAGO CON ERROR COMPENSACION',
+    'PAGO CON ERROR DATOS INCOMPLETOS',
+    'PAGO CON ERROR DATOS INCORRECTOS',
+    'PAGO CON ERROR DECLARACION (PDT) CON RECTIFICATORIA',
+    'PAGO CON ERROR DECLARACION (PDT) NO REGISTRADO',
+    'PAGO CON ERROR DECLARACION 1611',
+    'PAGO CON ERROR DECLARACION 1665',
+    'PAGO CON ERROR DECLARACION 1683',
+    'PAGO CON ERROR DEUDA',
+    'PAGO CON ERROR FORMULARIO 194',
+    'PAGO CON ERROR PDT 601',
+    'PAGO CON ERROR PDT 621',
+    'PAGO CON ERROR RUC CON BOLETA 1662',
+    'PAGO CON ERROR RUC CON BOLETA 1663',
+    'PAGO CON ERROR SOLICITUD MODIFICACION DE DATOS SMD',
+    'PAGO CON ERROR SPOT',
+    'PAGO CON ERROR VECTOR FISCAL'
+  ]
+};
+
+const FIRMA_OPTIONS = [
+  'Director General',
+  'Subdirector de Gestión',
+  'Jefe de Área',
+  'Gerente de Operaciones',
+  'Coordinador Legal',
+  'Especialista Tributario',
+  'Asistente Administrativo'
+];
+// ... (rest of code) ...
+
+// -- PREVIEW LOGIC --
+async function openPreview(id) {
+    const row = rows.find(r => r.id === id);
+    if(!row) return;
+
+    const modal = document.getElementById('preview-modal');
+    const content = document.getElementById('paper-content');
+    
+    // Mostrar Loading
+    content.innerHTML = '<div style="text-align:center; padding: 40px;"><i data-lucide="loader-2" class="spin" style="margin-bottom:10px;"></i><p>Generando documento en formato PDF...</p></div>';
+    modal.classList.remove('hidden');
+    lucide.createIcons();
+
+    try {
+        const response = await fetch('/autodoc/api/preview', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(row)
+        });
+
+        if (!response.ok) {
+            let errorMsg = 'Error al generar vista previa';
+            try {
+                const errorData = await response.json();
+                if(errorData.message) errorMsg = errorData.message;
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        // Mostrar PDF en iframe de forma fluida
+        content.innerHTML = `<iframe src="${url}" width="100%" height="100%" style="border:none; border-radius: 0 0 12px 12px; display: block;"></iframe>`;
+        
+    } catch(err) {
+        content.innerHTML = `<div style="text-align:center; padding: 40px; color: #dc3545;"><i data-lucide="alert-triangle" style="margin-bottom:10px;"></i><p>${err.message}</p></div>`;
+        lucide.createIcons();
+    }
+}
+
+function closePreview() {
+    document.getElementById('preview-modal').classList.add('hidden');
+}
+
+
+// -- State --
+let rows = [];
+let expandedCardId = null;
+let activeTab = 'basicos';
+
+// -- Initialization --
+document.addEventListener('DOMContentLoaded', () => {
+    // Initial rows
+    addRow();
+    // addRow(); // Start with just one for cleaner init
+    
+    // Initial Render
+    renderApp();
+    
+    // Initialize Icons
+    if(window.lucide) lucide.createIcons();
+});
+
+// -- Core Logic --
+
+function createEmptyRow(id) {
+    return {
+        id,
+        ruc: '',
+        razonSocial: '',
+        domicilio: '',
+        firma: '',
+        numExpediente: '',
+        fechaExpediente: '',
+        dias: '',
+        vcto: '',
+        boleta: '',
+        nOrden: '',
+        fechaBoleta: '',
+        monto: '',
+        periodo: '',
+        codErr: '',
+        tribErr: '',
+        codCor: '',
+        tribCor: '',
+        reimputacion: '',
+        ri: '',
+        valorVinculado: '',
+        expF194: '',
+        esquela: '',
+        obsv: '',
+        conteo: '',
+        estado: '',
+        tipoPlantilla: '',
+        subtipoPlantilla: ''
+    };
+}
+
+function addRow() {
+    const newId = rows.length > 0 ? Math.max(...rows.map(r => r.id)) + 1 : 1;
+    const newRow = createEmptyRow(newId);
+    rows.push(newRow);
+    expandedCardId = newId;
+    activeTab = 'basicos';
+    renderApp();
+}
+
+function deleteRow(id) {
+    rows = rows.filter(row => row.id !== id);
+    if (expandedCardId === id) expandedCardId = null;
+    renderApp();
+}
+
+function toggleCard(id) {
+    if (expandedCardId === id) {
+        expandedCardId = null;
+    } else {
+        expandedCardId = id;
+        activeTab = 'basicos';
+    }
+    renderApp();
+}
+
+function updateRowState(id, field, value) {
+    const row = rows.find(r => r.id === id);
+    if (row) {
+        row[field] = value;
+        if (field === 'tipoPlantilla') {
+            row.subtipoPlantilla = '';
+        }
+    }
+    
+    updateHeaderPreview(id);
+    updateStats();
+}
+
+function updateHeaderPreview(id) {
+    const row = rows.find(r => r.id === id);
+    if (!row) return;
+
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (!card) return;
+
+    // Helper to safely set text
+    const setText = (selector, val, fallback) => {
+        const el = card.querySelector(selector);
+        if (el) {
+            el.textContent = val || fallback;
+            if (val) el.classList.remove('empty');
+            else el.classList.add('empty'); 
+        }
+    };
+
+    setText('.preview-tipo', row.tipoPlantilla, 'Sin seleccionar');
+    setText('.preview-ruc', row.ruc, 'Sin RUC');
+    setText('.preview-razon', row.razonSocial, 'Sin razón social');
+    // setText('.preview-firma', row.firma, 'Sin firma'); // Removed from header to save space if needed, or keep
+    
+    const statusBadge = card.querySelector('.status-badge');
+    if (statusBadge) {
+        statusBadge.textContent = row.estado || 'Pendiente';
+        statusBadge.className = `status-badge ${row.estado ? 'completed' : 'pending'}`;
+    }
+}
+
+function switchTab(tabId) {
+    activeTab = tabId;
+    renderApp(); 
+}
+
+// -- Rendering --
+
+function renderApp() {
+    const listContainer = document.getElementById('document-list');
+    const emptyState = document.getElementById('empty-state');
+    const summaryFooter = document.getElementById('summary-footer');
+    
+    // Safety check just in case
+    if (!listContainer || !emptyState || !summaryFooter) return;
+    
+    if (rows.length === 0) {
+        listContainer.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        summaryFooter.classList.add('hidden');
+        if(window.lucide) lucide.createIcons();
+        return;
+    }
+    
+    emptyState.classList.add('hidden');
+    summaryFooter.classList.remove('hidden');
+    
+    listContainer.innerHTML = rows.map((row, index) => renderCard(row, index)).join('');
+    
+    updateStats();
+    if(window.lucide) lucide.createIcons();
+}
+
+function renderCard(row, index) {
+    const isExpanded = expandedCardId === row.id;
+    return `
+        <div class="card ${isExpanded ? 'expanded' : ''}" data-id="${row.id}">
+            <div class="card-header" onclick="toggleCard(${row.id})">
+                <div class="card-header-content">
+                    <div class="card-number">${index + 1}</div>
+                    <div class="card-info">
+                        <div class="info-item">
+                            <label><i data-lucide="layout-template" width="14"></i> Plantilla</label>
+                            <div class="preview-tipo ${!row.tipoPlantilla ? 'empty' : ''}">${row.tipoPlantilla || 'Seleccionar...'}</div>
+                        </div>
+                        <div class="info-item">
+                            <label><i data-lucide="building-2" width="14"></i> RUC / Razón Social</label>
+                            <div class="preview-razon ${!row.razonSocial ? 'empty' : ''}">${row.razonSocial || 'Sin Razón Social'} <small style="color:#999">(${row.ruc || 'Sin RUC'})</small></div>
+                        </div>
+                        <div class="info-item" style="max-width: 120px;">
+                            <span class="status-badge ${row.estado ? 'completed' : 'pending'}">${row.estado || 'Pendiente'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon-round" onclick="event.stopPropagation(); openPreview(${row.id})" title="Vista Previa" style="color: var(--primary-blue);">
+                        <i data-lucide="eye" width="18"></i>
+                    </button>
+                    <button class="btn-icon-round" onclick="event.stopPropagation(); deleteRow(${row.id})" title="Eliminar">
+                        <i data-lucide="trash-2" width="18"></i>
+                    </button>
+                    <button class="btn-icon-round" style="background:transparent; border: 1px solid #e0e0e0;">
+                        <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" width="20"></i>
+                    </button>
+                </div>
+            </div>
+            ${isExpanded ? renderCardBody(row) : ''}
+        </div>
+    `;
+}
+
+function renderCardBody(row) {
+    return `
+        <div class="card-body">
+            <div class="tabs">
+                ${renderTabButton('basicos', 'General')}
+                ${renderTabButton('expediente', 'Expediente')}
+                ${renderTabButton('boleta', 'Valores de Pago')}
+                ${renderTabButton('codigos', 'Códigos Tributarios')}
+                ${renderTabButton('otros', 'Otros Datos')}
+            </div>
+            
+            <div class="tab-content active">
+                ${renderTabContent(row)}
+            </div>
+        </div>
+    `;
+}
+
+function renderTabButton(id, label) {
+    return `
+        <button class="tab-btn ${activeTab === id ? 'active' : ''}" 
+                onclick="event.stopPropagation(); switchTab('${id}')">
+            ${label}
+        </button>
+    `;
+}
+
+// Helper to create DocCheck style inputs
+function entryBox(field, label, value, type='text', placeholder='', fullWidth=false, isSelect=false, options=[], disabled=false) {
+    const widthClass = fullWidth ? 'width: 100%;' : '';
+    let inputHtml = '';
+    
+    if (isSelect) {
+        inputHtml = `
+            <select class="entry-select" 
+                    onchange="updateRowState(${rows.find(r => r.id === value.id)?.id || 0}, '${field}', this.value); if('${field}' === 'tipoPlantilla') renderApp();"
+                    ${disabled ? 'disabled' : ''}>
+                <option value="">Seleccionar...</option>
+                ${options.map(opt => `<option value="${opt}" ${value.val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+            </select>
+        `;
+    } else {
+        inputHtml = `
+            <input type="${type}" 
+                   class="entry-input"
+                   value="${value || ''}" 
+                   oninput="updateRowState(${rows.find(r => r[field] === value)?.id || 0 /* Very Hacky way to find ID if not passed, better pass row.id */}, '${field}', this.value)"
+                   placeholder="${placeholder}">
+        `;
+        // Correction: updateRowState needs ID. We should pass ID to this helper or bind it. 
+        // Let's rewrite how we call this helper.
+    }
+    
+    return `
+        <div class="form-group" style="${widthClass}">
+            <div class="entry-box">
+                <div class="entry-label">${label}</div>
+                ${inputHtml}
+            </div>
+        </div>
+    `;
+}
+
+// Revised Input Helper
+function renderInput(row, field, label, type='text', placeholder='') {
+    return `
+        <div class="form-group">
+            <div class="entry-box">
+                <div class="entry-label">${label}</div>
+                <input type="${type}" class="entry-input" value="${row[field] || ''}" 
+                       oninput="updateRowState(${row.id}, '${field}', this.value)" 
+                       placeholder="${placeholder}">
+            </div>
+        </div>
+    `;
+}
+
+function renderSelect(row, field, label, options, disabled=false) {
+    return `
+        <div class="form-group">
+            <div class="entry-box">
+                <div class="entry-label">${label}</div>
+                <select class="entry-select" ${disabled ? 'disabled style="background:#f9f9f9; color:#999;"' : ''}
+                        onchange="updateRowState(${row.id}, '${field}', this.value); if('${field}' === 'tipoPlantilla') renderApp();">
+                    <option value="">Seleccionar...</option>
+                    ${options.map(opt => `<option value="${opt}" ${row[field] === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+            </div>
+        </div>
+    `;
+}
+
+function renderTabContent(row) {
+    if (activeTab === 'basicos') {
+        const subtipoOpts = row.tipoPlantilla ? (SUBTIPO_OPTIONS[row.tipoPlantilla] || []) : [];
+        
+        // Custom layout for General tab to match aesthetics
+        return `
+            ${renderSelect(row, 'tipoPlantilla', 'TIPO PLANTILLA', TIPO_PLANTILLA_OPTIONS)}
+            ${renderSelect(row, 'subtipoPlantilla', 'SUBTIPO / DETALLE', subtipoOpts, !row.tipoPlantilla)}
+            
+            <div style="flex-basis: 100%; height: 0; margin: 0;"></div> <!-- Break row -->
+            
+            ${renderInput(row, 'ruc', 'RUC', 'text', 'Ingrese RUC')}
+            ${renderInput(row, 'razonSocial', 'RAZÓN SOCIAL', 'text', 'Ingrese Razón Social')}
+            
+            <div style="flex-basis: 100%; height: 0; margin: 0;"></div>
+            
+            ${renderInput(row, 'domicilio', 'DOMICILIO FISCAL', 'text', 'Dirección completa...')}
+            
+            <div style="flex-basis: 100%; height: 0; margin: 0;"></div>
+            
+            ${renderSelect(row, 'firma', 'FIRMANTE', FIRMA_OPTIONS)}
+        `;
+    } 
+    else if (activeTab === 'expediente') {
+        return `
+            ${renderInput(row, 'numExpediente', 'N° EXPEDIENTE')}
+            ${renderInput(row, 'fechaExpediente', 'FECHA EXP.', 'date')}
+            ${renderInput(row, 'dias', 'DÍAS HÁBILES')}
+            ${renderInput(row, 'vcto', 'VENCIMIENTO')}
+            ${renderInput(row, 'expF194', 'EXP. F194')}
+            ${renderInput(row, 'esquela', 'ESQUELA ASOC.')}
+        `;
+    }
+    else if (activeTab === 'boleta') {
+        return `
+            ${renderInput(row, 'boleta', 'N° BOLETA')}
+            ${renderInput(row, 'nOrden', 'N° ORDEN')}
+            ${renderInput(row, 'fechaBoleta', 'FECHA BOLETA', 'date')}
+            ${renderInput(row, 'monto', 'MONTO DEUDA')}
+            ${renderInput(row, 'periodo', 'PERIODO TRIB.')}
+        `;
+    }
+    else if (activeTab === 'codigos') {
+        return `
+            ${renderInput(row, 'codErr', 'COD. ERROR')}
+            ${renderInput(row, 'tribErr', 'TRIB. ERROR')}
+            ${renderInput(row, 'codCor', 'COD. CORRECTO')}
+            ${renderInput(row, 'tribCor', 'TRIB. CORRECTO')}
+            ${renderInput(row, 'reimputacion', 'REIMPUTACIÓN')}
+            ${renderInput(row, 'ri', 'R.I.')}
+        `;
+    }
+    else if (activeTab === 'otros') {
+        return `
+            ${renderInput(row, 'valorVinculado', 'VALOR VINCULADO')}
+            ${renderInput(row, 'conteo', 'CONTEO INT.')}
+            ${renderInput(row, 'estado', 'ESTADO PROCESO')}
+            
+            <div class="form-group form-group-textarea" style="flex-basis: 100%;">
+                <div class="entry-box">
+                    <div class="entry-label">OBSERVACIONES</div>
+                    <textarea rows="3" oninput="updateRowState(${row.id}, 'obsv', this.value)">${row.obsv || ''}</textarea>
+                </div>
+            </div>
+        `;
+    }
+}
+
+
+function updateStats() {
+    const totalEl = document.getElementById('total-docs');
+    const compEl = document.getElementById('completed-docs');
+    const pendEl = document.getElementById('pending-docs');
+    
+    if(totalEl) totalEl.textContent = rows.length;
+    if(compEl) compEl.textContent = rows.filter(r => r.estado).length;
+    if(pendEl) pendEl.textContent = rows.filter(r => !r.estado).length;
+}
+
+// -- Excel Features --
+
+function generateDocuments() {
+    const validRows = rows.filter(r => r.ruc || r.razonSocial || r.tipoPlantilla);
+    if (validRows.length === 0) {
+        alert('No hay datos para generar documentos');
+        return;
+    }
+    alert(`Generando ${validRows.length} documento(s)...`);
+}
+
+function downloadTemplate() {
+    const template = [{
+      'TIPO PLANTILLA': '', 'SUBTIPO PLANTILLA': '', 'RUC': '', 'RAZON SOCIAL': '',
+      'DOMICILIO': '', 'FIRMA': '', 'NUM EXPEDIENTE': '', 'FECHA EXPEDIENTE': '',
+      'DIAS': '', 'VCTO': '', 'BOLETA': '', 'N° ORDEN': '', 'FECHA BOLETA': '',
+      'MONTO': '', 'PERIODO': '', 'COD ERR': '', 'TRIB ERR': '', 'COD COR': '',
+      'TRIB COR': '', 'REIMPUTACION': '', 'RI': '', 'VALOR VINCULADO': '',
+      'EXP F194': '', 'ESQUELA': '', 'OBSV': '', 'CONTEO': '', 'ESTADO': ''
+    }];
+
+    const ws = XLSX.utils.json_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+    XLSX.writeFile(wb, 'Plantilla_Generador_Documentos.xlsx');
+}
+
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = e.target.result;
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            if (jsonData.length === 0) {
+                alert('El archivo Excel está vacío');
+                return;
+            }
+
+            const importedRows = jsonData.map((row, index) => ({
+                id: (rows.length > 0 ? Math.max(...rows.map(r => r.id)) : 0) + index + 1,
+                tipoPlantilla: row['TIPO PLANTILLA'] || '',
+                subtipoPlantilla: row['SUBTIPO PLANTILLA'] || '',
+                ruc: row['RUC']?.toString() || '',
+                razonSocial: row['RAZON SOCIAL'] || '',
+                domicilio: row['DOMICILIO'] || '',
+                firma: row['FIRMA'] || '',
+                numExpediente: row['NUM EXPEDIENTE']?.toString() || '',
+                fechaExpediente: formatExcelDate(row['FECHA EXPEDIENTE']),
+                dias: row['DIAS']?.toString() || '',
+                vcto: row['VCTO']?.toString() || '',
+                boleta: row['BOLETA']?.toString() || '',
+                nOrden: row['N° ORDEN']?.toString() || '',
+                fechaBoleta: formatExcelDate(row['FECHA BOLETA']),
+                monto: row['MONTO']?.toString() || '',
+                periodo: row['PERIODO']?.toString() || '',
+                codErr: row['COD ERR']?.toString() || '',
+                tribErr: row['TRIB ERR']?.toString() || '',
+                codCor: row['COD COR']?.toString() || '',
+                tribCor: row['TRIB COR']?.toString() || '',
+                reimputacion: row['REIMPUTACION']?.toString() || '',
+                ri: row['RI']?.toString() || '',
+                valorVinculado: row['VALOR VINCULADO']?.toString() || '',
+                expF194: row['EXP F194']?.toString() || '',
+                esquela: row['ESQUELA']?.toString() || '',
+                obsv: row['OBSV'] || '',
+                conteo: row['CONTEO']?.toString() || '',
+                estado: row['ESTADO'] || ''
+            }));
+
+            rows = [...rows, ...importedRows];
+            renderApp();
+            alert(`Se importaron ${importedRows.length} registro(s) exitosamente`);
+        } catch (error) {
+            console.error(error);
+            alert('Error al leer el archivo Excel.');
+        }
+    };
+    reader.readAsBinaryString(file);
+    event.target.value = '';
+}
+
+function formatExcelDate(excelDate) {
+    if (!excelDate) return '';
+    if (typeof excelDate === 'string') return excelDate;
+    if (typeof excelDate === 'number') {
+        const date = new Date((excelDate - 25569) * 86400 * 1000);
+        return date.toISOString().split('T')[0];
+    }
+    return '';
+}
+</script>
+{% endblock %}

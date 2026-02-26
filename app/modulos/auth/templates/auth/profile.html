@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil - SICODE{% endblock %}
+
+{% block head_extra %}
+<style>
+    .profile-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .profile-header {
+        background: white;
+        padding: 30px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow-card);
+    }
+
+    .profile-avatar-large {
+        width: 100px;
+        height: 100px;
+        background-color: var(--primary-blue-light);
+        color: var(--primary-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+    }
+
+    .profile-info-header h2 {
+        font-family: var(--font-main);
+        margin: 0;
+        color: var(--text-dark);
+    }
+
+    .profile-info-header p {
+        margin: 5px 0 0;
+        color: var(--text-gray);
+        font-size: 14px;
+    }
+
+    .profile-card {
+        background: white;
+        padding: 30px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-card);
+    }
+
+    .profile-card h3 {
+        font-family: var(--font-main);
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--primary-blue-light);
+        color: var(--primary-blue-text);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group.full-width {
+        grid-column: span 2;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-gray);
+        margin-bottom: 8px;
+    }
+
+    .profile-input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1.5px solid var(--border-color);
+        border-radius: var(--radius-md);
+        font-family: var(--font-body);
+        font-size: 14px;
+        transition: 0.2s;
+        outline: none;
+    }
+
+    .profile-input:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(1, 99, 172, 0.1);
+    }
+
+    .profile-input:disabled {
+        background-color: #f8fafc;
+        color: var(--text-light-gray);
+        cursor: not-allowed;
+    }
+
+    .btn-save {
+        background-color: var(--primary-blue);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 50px;
+        font-family: var(--font-main);
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .btn-save:hover {
+        background-color: var(--primary-blue-hover);
+        transform: translateY(-2px);
+    }
+
+    .alert {
+        padding: 15px;
+        border-radius: var(--radius-md);
+        margin-bottom: 25px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .alert-success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    @media (max-width: 600px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .form-group.full-width {
+            grid-column: span 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block back_button %}
+<a href="/" style="margin-right: 15px; color: #555; font-size: 20px; display: flex; align-items: center; text-decoration: none;" title="Volver al Inicio">
+    <i class="fa-solid fa-house"></i>
+</a>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">Mi Perfil</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Información del Usuario</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    {% if success %}
+    <div class="alert alert-success animate__animated animate__fadeIn">
+        <i class="fa-solid fa-circle-check"></i> {{ success }}
+    </div>
+    {% endif %}
+
+    <div class="profile-header animate__animated animate__fadeInDown">
+        <div class="profile-avatar-large">
+            <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="profile-info-header">
+            <h2>{{ request.state.user.full_name }}</h2>
+            <p><i class="fa-solid fa-id-badge"></i> {{ request.state.user.codigo or 'N/A' }} | <strong>{{ request.state.user.role }}</strong></p>
+        </div>
+    </div>
+
+    <div class="profile-card animate__animated animate__fadeInUp">
+        <h3><i class="fa-solid fa-user-pen"></i> Datos Personales</h3>
+        <form action="/profile" method="POST">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Usuario (Login)</label>
+                    <input type="text" class="profile-input" value="{{ request.state.user.username }}" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Código Personal</label>
+                    <input type="text" name="codigo" class="profile-input" value="{{ request.state.user.codigo or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Nombres</label>
+                    <input type="text" name="nombre" class="profile-input" value="{{ request.state.user.nombre }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellidos</label>
+                    <input type="text" name="apellido" class="profile-input" value="{{ request.state.user.apellido }}" required>
+                </div>
+                <div class="form-group full-width">
+                    <label>Correo Electrónico</label>
+                    <input type="email" name="correo" class="profile-input" value="{{ request.state.user.correo or '' }}" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-save">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

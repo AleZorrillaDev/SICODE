@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Seace - Consulta de Contratos{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/seace.css" />
+<script src="https://unpkg.com/lucide@latest"></script>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">Seace</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Inteligencia de Contrataciones</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="seace-wrapper">
+    <div class="seace-toolbar">
+        <div class="header-left">
+            <h1>Consulta Masiva de Contratos</h1>
+            <p>Inteligencia de Contrataciones - Portal SEACE (OSCE)</p>
+        </div>
+        <div class="header-actions">
+           <button class="btn-process" style="background: var(--primary-alt);" onclick="clearAll()">
+                <i data-lucide="trash-2" width="16"></i> Limpiar
+           </button>
+        </div>
+    </div>
+
+    <div class="seace-main-grid">
+        <!-- Sidebar Panel -->
+        <div class="sidebar-panel">
+            <div class="section-title">
+                <i data-lucide="settings-2" width="18"></i> Parámetros de Búsqueda
+            </div>
+
+            <div class="form-group">
+                <label>RUCs de Proveedores (uno por línea)</label>
+                <textarea id="rucsInput" class="seace-textarea" placeholder="Ejemplo:&#10;20100000001&#10;20200000002"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>O cargar archivo (Excel / TXT)</label>
+                <div class="file-input-wrapper">
+                    <i data-lucide="upload-cloud" width="24" style="color: #94a3b8; margin-bottom: 8px;"></i>
+                    <div class="file-info" id="fileStatus">Seleccionar archivo...</div>
+                    <input type="file" id="fileInput" accept=".txt,.xlsx,.xls" onchange="updateFileInfo()" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Fecha de Inicio (Vigencia)</label>
+                <input type="date" id="startDate" class="seace-textarea" style="min-height: auto; padding: 10px;" value="2025-12-01">
+            </div>
+
+            <button id="btnProcess" class="btn-process" onclick="startProcess()">
+                <i data-lucide="play" width="18"></i> Iniciar Procesamiento
+            </button>
+        </div>
+
+        <!-- Content Panel -->
+        <div class="content-panel">
+            <!-- Progress Card -->
+            <div id="progressCard" class="progress-card">
+                <div class="progress-header">
+                    <span class="progress-text" id="progressText">Procesando solicitudes...</span>
+                    <span class="progress-percent" id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="progressFill" class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <!-- Summary Bar -->
+            <div id="summaryGrid" class="summary-grid" style="display: none;">
+                <div class="summary-box success">
+                    <span class="summary-label">Exitosos</span>
+                    <span class="summary-value" id="countSuccess">0</span>
+                </div>
+                <div class="summary-box error">
+                    <span class="summary-label">Fallidos</span>
+                    <span class="summary-value" id="countFailed">0</span>
+                </div>
+            </div>
+
+            <!-- Results List Card -->
+            <div class="results-card">
+                <div class="section-title">
+                    <i data-lucide="list" width="18"></i> Detalle por RUC
+                </div>
+                
+                <div id="emptyState" class="empty-state">
+                    <i data-lucide="search" size="48"></i>
+                    <p>Los resultados del procesamiento aparecerán aquí.</p>
+                </div>
+
+                <div id="resultsList" class="results-list" style="display: none;">
+                    <!-- Items mapped here -->
+                </div>
+
+                <div id="downloadArea" style="display: none; margin-top: auto; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
+                    <a id="downloadBtn" href="#" class="btn-process" style="background: var(--success-green); text-decoration: none;">
+                        <i data-lucide="download" width="18"></i> Descargar Reporte Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+
+    function updateFileInfo() {
+        const fileInput = document.getElementById('fileInput');
+        const fileStatus = document.getElementById('fileStatus');
+        if (fileInput.files.length > 0) {
+            fileStatus.innerHTML = `<strong>${fileInput.files[0].name}</strong> seleccionada`;
+            fileStatus.style.color = 'var(--primary-blue)';
+        }
+    }
+
+    function clearAll() {
+        document.getElementById('rucsInput').value = '';
+        document.getElementById('fileInput').value = '';
+        document.getElementById('fileStatus').innerText = 'Seleccionar archivo...';
+        document.getElementById('fileStatus').style.color = '#64748b';
+        document.getElementById('summaryGrid').style.display = 'none';
+        document.getElementById('resultsList').style.display = 'none';
+        document.getElementById('downloadArea').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'flex';
+        document.getElementById('progressCard').style.display = 'none';
+    }
+
+    async function startProcess() {
+        const rucsText = document.getElementById('rucsInput').value.trim();
+        const fileInput = document.getElementById('fileInput');
+        const startDate = document.getElementById('startDate').value;
+        const btn = document.getElementById('btnProcess');
+        
+        const progressCard = document.getElementById('progressCard');
+        const progressFill = document.getElementById('progressFill');
+        const progressPercent = document.getElementById('progressPercent');
+        
+        const summaryGrid = document.getElementById('summaryGrid');
+        const emptyState = document.getElementById('emptyState');
+        const resultsList = document.getElementById('resultsList');
+        const downloadArea = document.getElementById('downloadArea');
+
+        if (!rucsText && fileInput.files.length === 0) {
+            alert("Por favor ingrese RUCs o seleccione un archivo.");
+            return;
+        }
+
+        // UI Reset
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Procesando...`;
+        lucide.createIcons();
+        
+        progressCard.style.display = 'block';
+        progressFill.style.width = '10%';
+        progressPercent.innerText = '10%';
+        
+        summaryGrid.style.display = 'none';
+        emptyState.style.display = 'none';
+        resultsList.style.display = 'none';
+        downloadArea.style.display = 'none';
+
+        // Prepare Data
+        const formData = new FormData();
+        if (rucsText) formData.append('rucs', rucsText);
+        if (fileInput.files.length > 0) formData.append('file', fileInput.files[0]);
+        formData.append('start_date', startDate);
+
+        try {
+            // Fake progress interval while waiting for response
+            let p = 10;
+            const interval = setInterval(() => {
+                if (p < 90) {
+                    p += 2;
+                    progressFill.style.width = p + '%';
+                    progressPercent.innerText = p + '%';
+                }
+            }, 300);
+
+            const response = await fetch('/seace/process', {
+                method: 'POST',
+                body: formData
+            });
+
+            clearInterval(interval);
+            progressFill.style.width = '100%';
+            progressPercent.innerText = '100%';
+
+            if (!response.ok) throw new Error("Error en el servidor");
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Update Summary
+                document.getElementById('countSuccess').innerText = data.success_count;
+                document.getElementById('countFailed').innerText = data.failed_count;
+                summaryGrid.style.display = 'grid';
+
+                // Update List
+                resultsList.innerHTML = '';
+                
+                // 1. Success Summary Card (Verde - Siempre arriba si hay éxitos)
+                if (data.success_count > 0) {
+                    const successText = data.success_count === 1 
+                        ? "1 RUC procesado exitosamente" 
+                        : `${data.success_count} RUCs procesados exitosamente`;
+                        
+                    resultsList.innerHTML += `
+                        <div class="result-item" style="background: #f0fdf4; border-left: 5px solid #22c55e; margin-bottom: 15px; flex-direction: column; align-items: flex-start; padding: 15px;">
+                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                                <i data-lucide="check-circle" style="color: #22c55e;"></i>
+                                <span class="result-ruc" style="color: #166534;">Lote de Procesamiento</span>
+                                <span class="result-status status-valid">${successText}</span>
+                            </div>
+                            <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; width: 100%;">
+                                ${(data.success_rucs || []).map(ruc => `<span title="Procesado OK" style="background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid #bbf7d0;">${ruc}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 2. Failed RUCs (Rojo - Individuales para revisión)
+                if (data.failed_count > 0) {
+                    const errorHeader = document.createElement('div');
+                    errorHeader.className = 'section-title';
+                    errorHeader.style.fontSize = '14px';
+                    errorHeader.style.marginTop = '10px';
+                    errorHeader.style.marginBottom = '10px';
+                    errorHeader.style.color = '#ef4444';
+                    errorHeader.innerHTML = `<i data-lucide="alert-circle" width="16"></i> RUCs con inconvenientes (${data.failed_count})`;
+                    resultsList.appendChild(errorHeader);
+
+                    data.failed_rucs.forEach(item => {
+                        resultsList.innerHTML += `
+                            <div class="result-item" style="border-left: 5px solid #ef4444; margin-bottom: 8px; padding: 10px 15px;">
+                                <span class="result-ruc" style="font-weight: 600;">${item.ruc}</span>
+                                <span class="result-status status-invalid">${item.reason}</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                resultsList.style.display = 'flex';
+                downloadArea.style.display = 'block';
+                document.getElementById('downloadBtn').href = data.download_url;
+                
+            } else {
+                alert("Error: " + data.message);
+                emptyState.style.display = 'flex';
+            }
+
+        } catch (error) {
+            alert("Error crítico: " + error.message);
+            emptyState.style.display = 'flex';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="play" width="18"></i> Iniciar Procesamiento`;
+            progressCard.style.display = 'none';
+            lucide.createIcons();
+        }
+    }
+</script>
+{% endblock %}

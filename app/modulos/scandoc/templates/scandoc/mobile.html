@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ScanDoc Capture - Premium Edition</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/scandoc.css">
+</head>
+<body class="mobile-body">
+    <header class="mobile-header">
+        <div class="mobile-header-brand">
+            <i class="fa-solid fa-expand"></i>
+            <h1>ScanDoc <span>Captura</span></h1>
+        </div>
+        <div class="status-indicator">
+            <div id="statusDot" class="status-dot active"></div>
+            <span id="statusText">Listo</span>
+        </div>
+    </header>
+
+    <main class="capture-container">
+        <button id="captureBtn">
+            <i class="fa-solid fa-camera"></i>
+            <span>AÑADIR FOTO</span>
+        </button>
+        <p class="capture-hint">Apunta al documento y captura cada página</p>
+
+        <div class="photo-stack-wrapper">
+            <div id="photoStack" class="photo-stack">
+                <!-- Thumbs are injected here -->
+            </div>
+            <div id="emptyState" class="empty-captures">
+                <i class="fa-solid fa-images"></i>
+                <p>Las capturas aparecerán aquí</p>
+            </div>
+        </div>
+
+        <input type="file" id="fileInput" style="display:none" accept="image/*" capture="environment">
+    </main>
+
+    <footer class="mobile-actions">
+        <button id="processBtn" class="btn-mobile-primary" disabled>
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            PROCESAR CAPTURAS (0)
+        </button>
+        <button id="clearBtn" class="btn-mobile-secondary">
+            <i class="fa-solid fa-trash-can"></i>
+            LIMPIAR TODO
+        </button>
+    </footer>
+
+    <script>
+        const SCAN_ID = "{{ scan_id }}";
+        const fileInput = document.getElementById('fileInput');
+        const captureBtn = document.getElementById('captureBtn');
+        const processBtn = document.getElementById('processBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const photoStack = document.getElementById('photoStack');
+        const emptyState = document.getElementById('emptyState');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+
+        let photoQueue = [];
+
+        captureBtn.onclick = () => fileInput.click();
+
+        fileInput.onchange = async (e) => {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+            
+            // Visual feedback
+            updateStatus('loading', 'Procesando archivo...');
+            
+            try {
+                const base64 = await toBase64(file);
+                photoQueue.push(base64);
+                renderStack();
+                updateStatus('active', 'Listo');
+                
+                // Animación de rebote al botón si hay fotos
+                processBtn.style.transform = 'scale(1.05)';
+                setTimeout(() => processBtn.style.transform = 'scale(1)', 200);
+            } catch (err) {
+                updateStatus('error', 'Error al cargar');
+            }
+            
+            fileInput.value = ''; 
+        };
+
+        function renderStack() {
+            photoStack.innerHTML = '';
+            
+            if (photoQueue.length === 0) {
+                emptyState.style.display = 'flex';
+                processBtn.disabled = true;
+                processBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> PROCESAR CAPTURAS (0)`;
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            photoQueue.forEach((img, idx) => {
+                const item = document.createElement('div');
+                item.className = 'stack-item';
+                item.innerHTML = `
+                    <img src="${img}">
+                    <button class="remove-btn" onclick="removePhoto(${idx})">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                `;
+                photoStack.appendChild(item);
+            });
+            
+            processBtn.disabled = false;
+            processBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> PROCESAR CAPTURAS (${photoQueue.length})`;
+        }
+
+        window.removePhoto = (idx) => {
+            photoQueue.splice(idx, 1);
+            renderStack();
+        };
+
+        clearBtn.onclick = () => {
+            if (photoQueue.length === 0) return;
+            if (confirm('¿Deseas descartar todas las capturas actuales?')) {
+                photoQueue = [];
+                renderStack();
+            }
+        };
+
+        processBtn.onclick = async () => {
+            if (photoQueue.length === 0) return;
+
+            updateStatus('loading', 'Enviando al sistema...');
+            processBtn.disabled = true;
+
+            try {
+                const res = await fetch('/scandoc/api/ocr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        scan_id: SCAN_ID,
+                        images_base64: photoQueue
+                    })
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    updateStatus('active', '¡Capturas enviadas!');
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                    
+                    setTimeout(() => {
+                        photoQueue = [];
+                        renderStack();
+                        updateStatus('active', 'Listo');
+                    }, 2000);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (err) {
+                updateStatus('error', 'Fallo en envío');
+                processBtn.disabled = false;
+                console.error(err);
+            }
+        };
+
+        function updateStatus(type, text) {
+            statusDot.className = 'status-dot ' + type;
+            statusText.textContent = text;
+        }
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    </script>
+</body>
+</html>

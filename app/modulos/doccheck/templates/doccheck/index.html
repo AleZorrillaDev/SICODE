@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Consulta de Documentos{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/doccheck.css?v=65">
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/doccheck.js"></script>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">DocCheck</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Consulta de Documentos</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="doc-page">
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Fila 1: Navegación centrada -->
+    <div class="nav-row">
+        <button class="btn-nav" id="btn-prev"><i class="fa-solid fa-arrow-left"></i></button>
+        
+        <div class="entry-box" style="max-width: 240px;">
+            <div class="entry-label">Nº REGISTRO</div>
+            <input type="text" class="entry-input" id="record-idx" value="1">
+        </div>
+
+        <button class="btn-nav" id="btn-next"><i class="fa-solid fa-arrow-right"></i></button>
+        <div class="progress-indicator" id="progress-indicator" style="display: none;">
+            <span id="current-position">0</span> de <span id="total-records">0</span>
+        </div>
+    </div>
+
+    <!-- Fila 2: Botones + Campos pill -->
+    <div class="header-row">
+        <button class="btn-icon" id="btn-upload" title="Cargar Base"><i class="fa-solid fa-folder-open"></i></button>
+        <input type="file" id="file-upload" hidden accept=".xlsx, .xls">
+        <button class="btn-icon" id="btn-save" title="Guardar"><i class="fa-solid fa-floppy-disk"></i></button>
+
+        <div class="entry-box" style="max-width: 230px;">
+            <div class="entry-label">PAQUETE</div>
+            <input type="text" class="entry-input" id="field-paquete">
+        </div>
+
+        <div class="entry-box" style="max-width: 210px;">
+            <div class="entry-label">CAJA</div>
+            <input type="text" class="entry-input" id="field-caja">
+        </div>
+
+        <div class="entry-box" style="max-width: 220px;">
+            <div class="entry-label">FOLIOS</div>
+            <input type="text" class="entry-input" id="field-folios">
+        </div>
+    </div>
+
+    <!-- Campos del Formulario -->
+    <div class="form-section">
+        <!-- TIPO DE DOCUMENTO -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">TIPO DOCUMENTO</div>
+                <input type="text" class="entry-input" id="field-tipo-doc" placeholder="...">
+            </div>
+        </div>
+        
+        <!-- N DE DOCUMENTO -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">Nº DOCUMENTO</div>
+                <input type="text" class="entry-input" id="field-num-doc" placeholder="...">
+            </div>
+        </div>
+
+        <!-- RAZON SOCIAL -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">RAZÓN SOCIAL</div>
+                <input type="text" class="entry-input" id="field-razon" placeholder="...">
+            </div>
+        </div>
+
+        <!-- RUC -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">RUC</div>
+                <input type="text" class="entry-input" id="field-ruc" placeholder="...">
+            </div>
+        </div>
+
+        <!-- FECHA EXTREMA -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">FECHA EXTREMA</div>
+                <input type="text" class="entry-input" id="field-fecha" placeholder="...">
+            </div>
+        </div>
+
+        <!-- OBSERVACIONES -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">OBSERVACIONES</div>
+                <input type="text" class="entry-input" id="field-obs" placeholder="...">
+            </div>
+        </div>
+
+        <!-- X1 -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">X1 (REC)</div>
+                <input type="text" class="entry-input" id="field-x1" placeholder="...">
+            </div>
+        </div>
+
+        <!-- X2 -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">X2 (RC)</div>
+                <input type="text" class="entry-input" id="field-x2" placeholder="...">
+            </div>
+        </div>
+
+        <!-- X3 -->
+        <div class="field-row">
+            <div class="entry-box">
+                <div class="entry-label">X3</div>
+                <input type="text" class="entry-input" id="field-x3" placeholder="...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="action-section">
+        <button class="btn-action btn-consultar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            CONSULTAR RUC
+        </button>
+        <div class="export-group">
+            <button class="btn-action btn-export" id="btn-export-txt">
+                <span class="export-label">TXT</span>
+                <span>EXPORTAR TXT</span>
+            </button>
+            <button class="btn-action btn-export-excel" id="btn-export-excel">
+                <span class="export-label">XLS</span>
+                <span>EXPORTAR EXCEL</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

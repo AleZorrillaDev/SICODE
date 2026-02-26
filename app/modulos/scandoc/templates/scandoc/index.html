@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}ScanDoc Pro - Dashboard{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/scandoc.css">
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+    /* Ajustes específicos para integrar con la base */
+    .main-content-area {
+        padding: 0;
+        background-color: #f3f4f6;
+    }
+    .content {
+        padding: 24px;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title" style="margin-left: 10px;">
+    <span class="module-name">ScanDoc</span>
+    <span class="separator">|</span>
+    <span class="module-desc">OCR Avanzado</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div class="dashboard-grid">
+        <!-- PRIMERA FILA: QR y Edición -->
+        <div class="top-row">
+            <!-- PANEL IZQUIERDO: VINCULACIÓN -->
+            <aside class="scandoc-sidebar">
+                <div class="qr-section">
+                    <p>VINCULAR CELULAR</p>
+                    <div class="qr-card">
+                        <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
+                    </div>
+                    <small><a href="{{ mobile_url }}" target="_blank" id="mobileLink">{{ mobile_url }}</a></small>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="label">Escaneos Guardados</span>
+                        <strong id="scanCount" class="value">0</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Estado WebSocket</span>
+                        <strong id="wsStatus" class="value status-err">Desconectado</strong>
+                    </div>
+                </div>
+
+                <div class="robot-vision-container">
+                    <span class="robot-label">Visión del Robot</span>
+                    <div id="robotVisionGrid" class="vision-grid">
+                        <div id="robotPlaceholder" class="robot-placeholder">
+                            <i class="fa-solid fa-image" style="font-size: 32px; margin-bottom: 8px; opacity: 0.5;"></i>
+                            <p>Esperando escaneo...</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- PANEL DERECHO: EDICIÓN ACTUAL -->
+            <section class="staging-area fade-in">
+                <div class="staging-header">
+                    <h2>
+                        <i class="fa-solid fa-layer-group" style="margin-right: 10px; color: var(--primary-blue);"></i> Documento Actual
+                        <span id="pageCountBadge" class="badge-count">Páginas: 0</span>
+                    </h2>
+                </div>
+
+                <div class="staging-grid">
+                    <div class="field-group"><label>EXP SIGAD</label><input type="text" id="in_exp_sigad"></div>
+                    <div class="field-group"><label>FECHA DE RECEPCION</label><input type="text" id="in_fecha_recepcion"></div>
+                    <div class="field-group"><label>RUC</label><input type="text" id="in_ruc_contribuyente"></div>
+                    <div class="field-group"><label>CONTRIBUYENTE</label><input type="text" id="in_nombre_contribuyente"></div>
+                    <div class="field-group"><label>RES. COAC.</label><input type="text" id="in_res_coactiva"></div>
+                    <div class="field-group"><label>FECHA RC</label><input type="text" id="in_fecha_rc"></div>
+                    <div class="field-group"><label>EXPEDIENTE</label><input type="text" id="in_expediente_rc"></div>
+                    <div class="field-group"><label>MONTO</label><input type="text" id="in_monto"></div>
+                    <div class="field-group"><label>RUC TERCERO</label><input type="text" id="in_ruc_tercero"></div>
+                    <div class="field-group"><label>NOMBRE DEL TERCERO</label><input type="text" id="in_nombre_tercero"></div>
+                    <div class="field-group"><label>N° DE CHEQUE / BOLETA</label><input type="text" id="in_cheque_boleta"></div>
+                    <div class="field-group"><label>BANCO DEL CHEQUE</label><input type="text" id="in_banco_cheque"></div>
+                    <div class="field-group" style="grid-column: span 2;">
+                        <label>OBSERVACIONES</label>
+                        <input type="text" id="in_observaciones" list="obs_list" placeholder="Seleccione o escriba...">
+                        <datalist id="obs_list">
+                            <option value="MONTO COMPLETO">
+                            <option value="MONTO MENOR A LO SOLICITADO">
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="staging-actions">
+                    <button class="btn btn-secondary" onclick="resetStaging()" style="background: #9fa6b2;">
+                        <i class="fa-solid fa-xmark"></i> Descartar
+                    </button>
+                    <button class="btn btn-primary" onclick="commitToTable()" id="btnSave">
+                        <i class="fa-solid fa-circle-check"></i> <span id="saveText">Guardar Registro</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- SEGUNDA FILA: HISTORIAL -->
+        <div class="bottom-row">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 20px; font-weight: 700; color: var(--text-dark); margin: 0;">Historial</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="downloadExcel()" style="padding: 8px 16px; font-size: 13px;">
+                        <i class="fa-solid fa-file-excel"></i> Exportar
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearTable()" style="padding: 8px 16px; font-size: 13px; background: #e5e7eb; color: #4b5563;">
+                        <i class="fa-solid fa-trash-can"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrapper fade-in">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>EXP SIGAD</th>
+                            <th>FECHA REC.</th>
+                            <th>RUC</th>
+                            <th>CONTRIBUYENTE</th>
+                            <th>RES. COAC.</th>
+                            <th>FECHA RC</th>
+                            <th>EXPEDIENTE</th>
+                            <th>MONTO</th>
+                            <th>RUC TERCERO</th>
+                            <th>NOMBRE TERCERO</th>
+                            <th>CHQ/BOL</th>
+                            <th>BANCO</th>
+                            <th>OBS.</th>
+                            <th>ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+                <div id="emptyState" class="empty-state">
+                    <i class="fa-solid fa-inbox" style="font-size: 48px; margin-bottom: 10px; opacity: 0.3;"></i>
+                    <p>No hay documentos procesados.</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="font-size: 12px; color: var(--primary-blue); margin-bottom: 8px; text-transform: uppercase;">Texto OCR (Crudo)</h3>
+                <textarea id="rawTextArea" readonly
+                    style="width: 100%; height: 100px; background: #fff; border: 1px solid var(--border-gray); border-radius: 8px; padding: 10px; font-size: 11px; font-family: monospace;"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VISIÓN -->
+<div id="visionModal" class="modal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="modal-close" onclick="closeModal(event)">&times;</span>
+        <div class="carousel-container">
+            <button id="prevBtn" class="carousel-nav nav-prev" onclick="prevImage()"><i class="fa-solid fa-chevron-left"></i></button>
+            <img id="carouselImg" class="carousel-image" src="" alt="Robot Vision">
+            <button id="nextBtn" class="carousel-nav nav-next" onclick="nextImage()"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div id="modalCounter" class="modal-counter">Imagen 1 de 1</div>
+    </div>
+</div>
+
+<div id="toast" class="toast">¡Datos actualizados!</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const SCAN_ID = "{{ scan_id }}";
+    let socket;
+    let tableCounter = 0;
+    let currentPageCount = 0;
+    let currentProcessedImages = [];
+    let currentCarouselIdx = 0;
+    let editingRowId = null;
+
+    const keys = [
+        'exp_sigad', 'fecha_recepcion', 'ruc_contribuyente', 'nombre_contribuyente',
+        'res_coactiva', 'fecha_rc', 'expediente_rc', 'monto',
+        'ruc_tercero', 'nombre_tercero', 'cheque_boleta', 'banco_cheque', 'observaciones'
+    ];
+
+    function initWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/scandoc/ws/${SCAN_ID}`;
+        
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = () => {
+            const wsStatus = document.getElementById('wsStatus');
+            wsStatus.textContent = "CONECTADO";
+            wsStatus.className = "value status-ok";
+        };
+
+        socket.onclose = () => {
+            const wsStatus = document.getElementById('wsStatus');
+            wsStatus.textContent = "DESCONECTADO";
+            wsStatus.className = "value status-err";
+            // Reintentar en 3 segundos
+            setTimeout(initWebSocket, 3000);
+        };
+
+        socket.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'new_scan') {
+                mergeScanData(msg.data);
+                document.getElementById('rawTextArea').value = msg.raw_text;
+                if (msg.processed_images) {
+                    currentProcessedImages = msg.processed_images;
+                    renderVisionGrid();
+                }
+                showToast("Nueva captura recibida");
+            }
+        };
+    }
+
+    function mergeScanData(newData) {
+        currentPageCount++;
+        document.getElementById('pageCountBadge').textContent = `Páginas: ${currentPageCount}`;
+        for (const key of keys) {
+            const val = newData[key];
+            if (val && val.trim() !== "") {
+                const el = document.getElementById('in_' + key);
+                el.value = val;
+                el.style.borderColor = "var(--primary-blue)";
+            }
+        }
+    }
+
+    function renderVisionGrid() {
+        const grid = document.getElementById('robotVisionGrid');
+        const placeholder = document.getElementById('robotPlaceholder');
+        grid.innerHTML = '';
+        placeholder.style.display = 'none';
+
+        currentProcessedImages.forEach((img, idx) => {
+            const div = document.createElement('div');
+            div.className = 'mini-thumb';
+            div.innerHTML = `<img src="data:image/jpeg;base64,${img}"><div class="vision-overlay"><i class="fa-solid fa-eye"></i></div>`;
+            div.onclick = () => openModal(idx);
+            grid.appendChild(div);
+        });
+    }
+
+    function openModal(index) {
+        currentCarouselIdx = index;
+        updateCarousel();
+        document.getElementById('visionModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('visionModal').style.display = 'none';
+    }
+
+    function updateCarousel() {
+        document.getElementById('carouselImg').src = "data:image/jpeg;base64," + currentProcessedImages[currentCarouselIdx];
+        document.getElementById('modalCounter').textContent = `Imagen ${currentCarouselIdx + 1} de ${currentProcessedImages.length}`;
+    }
+
+    function nextImage() {
+        currentCarouselIdx = (currentCarouselIdx + 1) % currentProcessedImages.length;
+        updateCarousel();
+    }
+
+    function prevImage() {
+        currentCarouselIdx = (currentCarouselIdx - 1 + currentProcessedImages.length) % currentProcessedImages.length;
+        updateCarousel();
+    }
+
+    function commitToTable() {
+        const data = {};
+        keys.forEach(k => data[k] = document.getElementById('in_' + k).value);
+
+        if (editingRowId) {
+            const tr = document.getElementById(editingRowId);
+            const num = tr.cells[0].innerText;
+            tr.innerHTML = getRowHTML(num, data, editingRowId);
+            showToast("Registro actualizado");
+        } else {
+            addScanRow(data);
+        }
+        resetStaging();
+    }
+
+    function addScanRow(data) {
+        document.getElementById('emptyState').style.display = 'none';
+        tableCounter++;
+        const rowId = 'row_' + Date.now();
+        const tr = document.createElement('tr');
+        tr.id = rowId;
+        tr.innerHTML = getRowHTML(tableCounter, data, rowId);
+        document.getElementById('tableBody').appendChild(tr);
+        document.getElementById('scanCount').textContent = tableCounter;
+    }
+
+    function getRowHTML(num, data, rowId) {
+        return `
+            <td>${num}</td>
+            <td><span class="badgexp">${data.exp_sigad || '-'}</span></td>
+            <td>${data.fecha_recepcion || '-'}</td>
+            <td><span class="badgexp">${data.ruc_contribuyente || '-'}</span></td>
+            <td style="font-size:10px;">${data.nombre_contribuyente || '-'}</td>
+            <td>${data.res_coactiva || '-'}</td>
+            <td>${data.fecha_rc || '-'}</td>
+            <td>${data.expediente_rc || '-'}</td>
+            <td><strong>${data.monto || '-'}</strong></td>
+            <td>${data.ruc_tercero || '-'}</td>
+            <td style="font-size:10px;">${data.nombre_tercero || '-'}</td>
+            <td>${data.cheque_boleta || '-'}</td>
+            <td>${data.banco_cheque || '-'}</td>
+            <td>${data.observaciones || '-'}</td>
+            <td>
+                <div style="display:flex; gap:5px;">
+                    <button class="action-btn edit" onclick="editRow('${rowId}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="action-btn delete" onclick="deleteRow('${rowId}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </td>
+        `;
+    }
+
+    function editRow(rowId) {
+        editingRowId = rowId;
+        const tr = document.getElementById(rowId);
+        const cells = tr.cells;
+        
+        // Mapeo manual basado en getRowHTML
+        const vals = [
+            cells[1].innerText, cells[2].innerText, cells[3].innerText, cells[4].innerText,
+            cells[5].innerText, cells[6].innerText, cells[7].innerText, cells[8].innerText,
+            cells[9].innerText, cells[10].innerText, cells[11].innerText, cells[12].innerText, cells[13].innerText
+        ];
+
+        keys.forEach((k, i) => {
+            const val = vals[i] === '-' ? '' : vals[i];
+            document.getElementById('in_' + k).value = val;
+        });
+
+        document.getElementById('saveText').textContent = "Actualizar";
+        document.getElementById('btnSave').style.background = "var(--success)";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteRow(rowId) {
+        if (confirm("¿Eliminar registro?")) {
+            document.getElementById(rowId).remove();
+            refreshIndices();
+        }
+    }
+
+    function refreshIndices() {
+        tableCounter = 0;
+        const rows = document.getElementById('tableBody').rows;
+        Array.from(rows).forEach((r, i) => {
+            tableCounter++;
+            r.cells[0].innerText = tableCounter;
+        });
+        document.getElementById('scanCount').textContent = tableCounter;
+        if (tableCounter === 0) document.getElementById('emptyState').style.display = 'flex';
+    }
+
+    function resetStaging() {
+        keys.forEach(k => {
+            const el = document.getElementById('in_' + k);
+            el.value = "";
+            el.style.borderColor = "var(--border-gray)";
+        });
+        currentPageCount = 0;
+        editingRowId = null;
+        document.getElementById('pageCountBadge').textContent = "Páginas: 0";
+        document.getElementById('saveText').textContent = "Guardar Registro";
+        document.getElementById('btnSave').style.background = "";
+    }
+
+    function clearTable() {
+        if (confirm("¿Limpiar historial?")) {
+            document.getElementById('tableBody').innerHTML = '';
+            refreshIndices();
+        }
+    }
+
+    function downloadExcel() {
+        // Lógica simple de exportación usando SheetJS
+        const data = [];
+        const rows = document.getElementById('tableBody').rows;
+        Array.from(rows).forEach(r => {
+            const item = {};
+            keys.forEach((k, i) => item[k] = r.cells[i+1].innerText);
+            data.push(item);
+        });
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Escaneos");
+        XLSX.writeFile(wb, "ScanDoc_Export.xlsx");
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    initWebSocket();
+</script>
+{% endblock %}

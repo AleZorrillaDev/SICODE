@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}Boletín Oficial - El Peruano{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root {
+        --calendar-bg: #ffffff;
+        --calendar-border: #e2e8f0;
+        --calendar-text: #1e293b;
+        --calendar-hover: #f1f5f9;
+        --calendar-active: #0066b3;
+        --calendar-has-data: #dcfce7;
+        --calendar-has-data-text: #166534;
+        --item-selected: #0066b3;
+    }
+
+    .boletin-container {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        grid-template-rows: calc(100vh - 120px);
+        gap: 20px;
+        padding: 20px;
+        background: #f8fafc;
+    }
+
+    /* Left Panel: Calendar & Results List */
+    .side-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        overflow-y: auto;
+    }
+
+    .card-boletin {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        border: 1px solid var(--calendar-border);
+        padding: 20px;
+    }
+
+    /* Calendar Styles */
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .calendar-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--calendar-text);
+    }
+
+    .calendar-nav button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        color: #64748b;
+        transition: 0.2s;
+    }
+
+    .calendar-nav button:hover {
+        color: var(--calendar-active);
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        text-align: center;
+        gap: 0; /* Sin gaps para que el rango se vea continuo */
+    }
+
+    .calendar-day-head {
+        font-size: 11px;
+        font-weight: 700;
+        color: #94a3b8;
+        padding-bottom: 10px;
+    }
+
+    /* Booking.com Style Range Selectors */
+    .calendar-day {
+        aspect-ratio: 1; /* Volvemos a 1 para que el círculo sea perfecto */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        position: relative; /* Para ::before */
+        user-select: none;
+        z-index: 1;
+        margin: 2px 0; /* Ligero margen vertical */
+    }
+
+    /* El círculo de hover y selección activa va en un div interior idealmente, pero usaremos el color de fondo directo con z-index */
+    
+    .calendar-day:hover:not(.empty) {
+        color: var(--calendar-active);
+        font-weight: 700;
+    }
+
+    .calendar-day.has-data::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        width: 4px;
+        height: 4px;
+        background: #10b981;
+        border-radius: 50%;
+    }
+
+    /* Ribbon azul de fondo para el rango continuo */
+    .calendar-day.in-range::before,
+    .calendar-day.range-start::before,
+    .calendar-day.range-end::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        z-index: -1;
+        background: #e0f2fe; /* Azul clarito premium */
+    }
+
+    .calendar-day.in-range::before {
+        left: 0;
+        right: 0;
+    }
+
+    .calendar-day.range-start::before {
+        left: 50%; /* Empieza a la mitad */
+        right: 0;
+    }
+
+    .calendar-day.range-end::before {
+        left: 0;
+        right: 50%; /* Termina a la mitad */
+    }
+
+    /* Caso donde start = end (un solo día, o el array se cierra en el mismo dia) */
+    .calendar-day.range-start.range-end::before {
+        display: none; 
+    }
+
+    /* El punto azul principal (el círculo) */
+    .calendar-day.active {
+        color: white !important;
+        font-weight: 700;
+    }
+
+    .calendar-day.active::after {
+        /* Reemplazamos el puntito de data por el fondo azul de selection */
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(100% - 4px); /* Casi ocupa todo */
+        height: calc(100% - 4px);
+        background: var(--calendar-active);
+        border-radius: 50%;
+        z-index: -1;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+    
+    /* Hover previsualización para el in-range */
+    .calendar-day.in-range {
+        color: #0369a1;
+        font-weight: 600;
+    }
+
+    .calendar-day.in-range-preview {
+        background: #f1f5f9;
+        border-radius: 0;
+        outline: 1px dashed #cbd5e1;
+    }
+
+    .calendar-day.today {
+        font-weight: 800;
+        color: var(--calendar-active);
+    }
+    
+    .calendar-day.today:not(.active) {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-decoration-thickness: 2px;
+    }
+
+    /* Results List */
+    .results-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .result-item {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--calendar-border);
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .result-item:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .result-item.selected {
+        background: #eff6ff;
+        border-color: #3b82f6;
+    }
+
+    .result-info {
+        flex: 1;
+    }
+
+    .result-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .result-meta {
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .btn-download-small {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+    }
+
+    .btn-download-small:hover {
+        background: #e2e8f0;
+        color: var(--calendar-active);
+    }
+
+    /* Right Panel: Viewport */
+    .view-panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        border: 1px solid var(--calendar-border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .view-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--calendar-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .view-header h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+        color: #1e293b;
+    }
+
+    .view-controls {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--calendar-active);
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: #005596;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-secondary:hover {
+        background: #f1f5f9;
+    }
+
+    .pdf-viewport {
+        flex: 1;
+        background: #525659;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .empty-viewer {
+        color: white;
+        text-align: center;
+    }
+
+    .empty-viewer i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    /* Loader */
+    .loader-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255,255,255,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        border-radius: inherit;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--calendar-active);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">Boletín Oficial</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Consulta Diario El Peruano</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="boletin-container">
+    <!-- Panel Izquierdo -->
+    <div class="side-panel">
+        <!-- Calendario -->
+        <div class="card-boletin">
+            <div class="calendar-header">
+                <h3 id="current-month">Febrero 2026</h3>
+                <div class="calendar-nav">
+                    <button id="prev-month"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button id="next-month"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div id="calendar-grid" class="calendar-grid">
+                <!-- Se genera con JS -->
+            </div>
+            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                <span style="color: #64748b;"><i class="fa-solid fa-circle-info"></i> Selecciona varios días</span>
+                <button id="btn-clear-selection" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 10px; font-weight: 700; text-transform: uppercase;">
+                    <i class="fa-solid fa-trash-can"></i> Limpiar
+                </button>
+            </div>
+        </div>
+
+        <!-- Buscador (Filtro BPSEARCH) -->
+        <div class="card-boletin">
+            <h3 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 700; color: #1e293b;">BUSCADOR EN PDFs</h3>
+            <div style="display: flex; gap: 8px;">
+                <div style="flex: 1; position: relative;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;"></i>
+                    <input type="text" id="search-word" placeholder="Término a buscar..." 
+                        style="width: 100%; padding: 10px 10px 10px 35px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 14px; outline: none; transition: 0.2s;">
+                </div>
+                <button id="btn-start-search" class="btn-primary" style="padding: 0 15px; border-radius: 8px; border: none; cursor: pointer;">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+            
+            <!-- Progreso de Búsqueda (Estilo BpSearch) -->
+            <div id="search-progress-container" style="display: none; margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px;">
+                    <span id="search-status-text">Procesando...</span>
+                    <span id="search-status-percent">0%</span>
+                </div>
+                <div style="height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                    <div id="search-progress-bar" style="width: 0%; height: 100%; background: #0066b3; transition: 0.3s;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="card-boletin" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Publicaciones</h3>
+                <span id="results-count" style="font-size: 11px; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; color: #475569;">0</span>
+            </div>
+            <div id="results-list" class="results-list">
+                <div style="text-align: center; padding: 40px 0; color: #94a3b8;">
+                    <i class="fa-solid fa-calendar-day" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p style="font-size: 13px;">Selecciona una fecha</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Derecho: Visor -->
+    <div class="view-panel">
+        <div class="view-header">
+            <h2 id="current-document-title">Visor de Documentos</h2>
+            <div class="view-controls" id="view-controls" style="display: none;">
+                <button class="btn-action btn-secondary" id="btn-open-external">
+                    <i class="fa-solid fa-external-link"></i> Abrir Original
+                </button>
+                <button class="btn-action btn-primary" id="btn-download-main">
+                    <i class="fa-solid fa-download"></i> Descargar PDF
+                </button>
+            </div>
+        </div>
+        <div class="pdf-viewport" id="pdf-viewport">
+            <div class="empty-viewer" id="empty-viewer">
+                <i class="fa-solid fa-file-pdf"></i>
+                <p>Selecciona un boletín para visualizarlo aquí</p>
+            </div>
+            <div id="viewport-loader" class="loader-overlay" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+            <!-- iframe se inserta aquí -->
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/boletin.js"></script>
+{% endblock %}

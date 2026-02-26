@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Portal Corporativo{% endblock %}
+
+<!-- Ocultar flecha de volver en Inicio -->
+{% block back_button %}{% endblock %}
+
+{% block content %}
+
+<!-- CONTENEDOR CENTRALIZADO -->
+<div style="max-width: 1100px; margin: 0 auto; padding-top: 40px; padding-bottom: 60px;">
+
+    <!-- 1. BUSCADOR PRINCIPAL -->
+    <div style="text-align: center; margin-bottom: 50px;">
+        <h1 style="font-family: var(--font-main); color: var(--text-dark); margin-bottom: 10px; font-size: 32px;">
+            Hub de Aplicaciones
+        </h1>
+        <p style="color: var(--text-gray); margin-bottom: 30px;">Accede a todas tus herramientas y sistemas desde un
+            solo lugar.</p>
+
+        <div style="position: relative; max-width: 600px; margin: 0 auto;">
+            <i class="fa-solid fa-search"
+                style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px;"></i>
+            <input type="text" placeholder="Buscar herramienta..."
+                style="width: 100%; padding: 18px 20px 18px 50px; border-radius: 50px; border: 1px solid #e2e8f0; font-size: 16px; outline: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: 0.2s;"
+                onfocus="this.style.borderColor='var(--primary-blue)'; this.style.boxShadow='0 0 0 4px var(--primary-blue-light)';"
+                onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)';"
+                onkeyup="filterModules(this.value)">
+        </div>
+    </div>
+
+    <!-- 2. GRID DE APPS UNIFORME -->
+    <div class="modules-grid" id="modulesContainer"
+        style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+
+        <!-- App 1: ContriCall (Azul) -->
+        <div class="module-card card-blue" onclick="alert('Abriendo ContriCall...')"
+            data-name="contricall llamadas telefono callcenter">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <span class="active-dot" style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"
+                    title="Online"></span>
+            </div>
+            <h3 class="module-title">ContriCall</h3>
+            <p class="module-desc">Gestión de llamadas y atención al contribuyente.</p>
+        </div>
+
+        <!-- App 2: DocCheck (Verde) -->
+        <div class="module-card card-green" onclick="location.href='/doccheck'"
+            data-name="doccheck verificacion documentos validacion">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                </div>
+                <span class="active-dot" style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"
+                    title="Online"></span>
+            </div>
+            <h3 class="module-title">DocCheck</h3>
+            <p class="module-desc">Verificación masiva de documentos SUNAT.</p>
+        </div>
+
+        <!-- App 3: Piloto (Rojo) -->
+        <div class="module-card card-red" onclick="window.location.href='/piloto'"
+            data-name="piloto fraccionamiento deuda 36">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-rocket"></i>
+                </div>
+                <span class="active-dot" style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"
+                    title="Online"></span>
+            </div>
+            <h3 class="module-title">Piloto</h3>
+            <p class="module-desc">Sistema piloto de fraccionamiento y deuda.</p>
+        </div>
+
+        <!-- App 4: BPSearch (Morado) -->
+        <div class="module-card card-purple" onclick="window.location.href='/bpsearch/'"
+            data-name="bpsearch buscador robot esquelas">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+            </div>
+            <h3 class="module-title">BPSearch</h3>
+            <p class="module-desc">Robot de búsqueda de esquelas y expedientes.</p>
+        </div>
+
+        <!-- App 5: AutoDoc (Naranja) -->
+        <div class="module-card card-orange" onclick="window.location.href='/autodoc/'"
+            data-name="autodoc generador documentos automatico">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+            </div>
+            <h3 class="module-title">AutoDoc</h3>
+            <p class="module-desc">Generación automatizada de reportes y oficios.</p>
+        </div>
+
+        <!-- App 6: DataMask (Gris) -->
+        <div class="module-card card-slate" onclick="window.location.href='/datamask/'"
+            data-name="datamask corrector seguridad datos">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+            </div>
+            <h3 class="module-title">DataMask</h3>
+            <p class="module-desc">Corrector y enmascaramiento de datos sensibles.</p>
+        </div>
+
+        <!-- App 7: SCADBot (Indigo) -->
+        <div class="module-card card-indigo" onclick="window.location.href='/scadbot/'"
+            data-name="scadbot bot automatizacion robot">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+            </div>
+            <h3 class="module-title">SCADBot</h3>
+            <p class="module-desc">Automatización de procesos SCAD.</p>
+        </div>
+
+        <!-- App 8: Signa (Verde) -->
+        <div class="module-card card-green" onclick="window.location.href='/signa/'"
+            data-name="signa firma digital documentos">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-file-signature"></i>
+                </div>
+            </div>
+            <h3 class="module-title">Signa</h3>
+            <p class="module-desc">Gestión de firmas digitales.</p>
+        </div>
+
+        <!-- App 9: ScanDoc (Azul) -->
+        <div class="module-card card-blue" onclick="window.location.href='/scandoc/'"
+            data-name="scandoc escaner digitalizacion documentos">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-print"></i>
+                </div>
+            </div>
+            <h3 class="module-title">ScanDoc</h3>
+            <p class="module-desc">Digitalización y clasificación inteligente.</p>
+        </div>
+
+        <!-- App 10: Seace (Celeste) -->
+        <div class="module-card card-cyan" onclick="window.location.href='/seace/'"
+            data-name="seace contratos osce buscador">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-search-dollar"></i>
+                </div>
+            </div>
+            <h3 class="module-title">Seace</h3>
+            <p class="module-desc">Consulta masiva de contratos OSCE.</p>
+        </div>
+
+        <!-- App 11: Boletín (Rosa/Cereza) -->
+        <div class="module-card card-pink" onclick="window.location.href='/boletin/'"
+            data-name="boletin el peruano buscador pdf robot">
+            <div style="display: flex; align-items: start; justify-content: space-between;">
+                <div class="module-icon-box">
+                    <i class="fa-solid fa-newspaper"></i>
+                </div>
+            </div>
+            <h3 class="module-title">Boletín</h3>
+            <p class="module-desc">Buscador avanzado en el Boletín El Peruano.</p>
+        </div>
+
+
+    </div>
+
+    <!-- Mensaje No Encontrado -->
+    <div id="noResults" style="display: none; text-align: center; margin-top: 60px; color: var(--text-gray);">
+        <i class="fa-regular fa-face-frown-open" style="font-size: 40px; margin-bottom: 15px; color: #cbd5e1;"></i>
+        <h3 style="font-size: 18px; margin-bottom: 5px;">No encontramos esa aplicación</h3>
+        <p>Intenta con otra palabra clave (ej. "pagos", "recursos").</p>
+    </div>
+
+</div>
+
+<script>
+    function filterModules(query) {
+        const container = document.getElementById('modulesContainer');
+        const cards = container.getElementsByClassName('module-card');
+        const noResults = document.getElementById('noResults');
+        let visibleCount = 0;
+
+        query = query.toLowerCase();
+
+        for (let card of cards) {
+            // Buscamos en el atributo data-name (keywords) y en el contenido visible
+            const keywords = card.getAttribute('data-name').toLowerCase();
+            const title = card.querySelector('.module-title').innerText.toLowerCase();
+            const desc = card.querySelector('.module-desc').innerText.toLowerCase();
+
+            if (keywords.includes(query) || title.includes(query) || desc.includes(query)) {
+                card.style.display = "flex";
+                // Animación simple de entrada
+                card.style.opacity = "1";
+                card.style.transform = "scale(1)";
+                visibleCount++;
+            } else {
+                card.style.display = "none";
+            }
+        }
+
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+    }
+</script>
+
+{% endblock %}

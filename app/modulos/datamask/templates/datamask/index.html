@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+
+{% block title %}DataMask - Editor PDF{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/datamask.css">
+<!-- PDF.js CDN (Using CDN as requested) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">DataMask</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Editor y Enmascaramiento PDF</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="datamask-page">
+
+    <!-- Chrome-like Toolbar -->
+    <div class="dm-toolbar">
+        <div class="dm-toolbar-group">
+            <div class="dm-title">DataMask</div>
+            
+            <button class="dm-btn" id="btnOpen" onclick="document.getElementById('fileInput').click()" title="Abrir PDF">
+                <i class="fa-solid fa-folder-open"></i>
+            </button>
+            <input type="file" id="fileInput" accept="application/pdf" style="display: none" onchange="loadPDF(this.files[0])">
+            
+            <button class="dm-btn" id="btnSave" onclick="savePDF()" title="Guardar (Ctrl+S)">
+                <i class="fa-solid fa-download"></i>
+            </button>
+            
+            <button class="dm-btn" id="btnPrint" onclick="window.print()" title="Imprimir" style="display:none;">
+                <i class="fa-solid fa-print"></i>
+            </button> <!-- Placeholder -->
+        </div>
+
+        <div class="dm-toolbar-group">
+            <button class="dm-btn" onclick="prevPage()" title="Página Anterior (←)">
+                <i class="fa-solid fa-chevron-up"></i>
+            </button>
+            
+            <input type="number" id="pageInput" class="dm-page-control" value="1" min="1" onchange="jumpToPage(this.value)">
+            <span class="dm-page-label">de <span id="totalPages">0</span></span>
+            
+            <button class="dm-btn" onclick="nextPage()" title="Página Siguiente (→)">
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            
+            <div class="dm-divider"></div>
+            
+            <button class="dm-btn" onclick="changeZoom(-0.1)" title="Alejar (-)">
+                <i class="fa-solid fa-minus"></i>
+            </button>
+            <button class="dm-btn" onclick="changeZoom(0.1)" title="Acercar (+)">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+            <span class="dm-page-label" id="zoomLabel" style="min-width: 45px; text-align:right;">100%</span>
+        </div>
+
+        <div class="dm-toolbar-group">
+             <button class="dm-btn" onclick="toggleFitWidth()" id="btnFitWidth" title="Ajustar Ancho">
+                <i class="fa-solid fa-arrows-left-right"></i>
+            </button>
+            <div class="dm-divider"></div>
+            <button class="dm-btn" onclick="undoAction()" title="Deshacer (Ctrl+Z)">
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Workspace -->
+    <div class="dm-workspace">
+
+        <!-- Sidebar (Tools & Colors) -->
+        <div class="dm-sidebar">
+            <div class="dm-panel-section">
+                <div class="dm-panel-title">Herramientas</div>
+                <div class="tool-item selected" id="tool-ink" onclick="setTool('ink')" title="Dibujar (P)">
+                    <i class="fa-solid fa-pen"></i> Dibujar
+                </div>
+                <div class="tool-item" id="tool-highlight" onclick="setTool('highlight')" title="Resaltar (H)">
+                    <i class="fa-solid fa-highlighter"></i> Resaltar
+                </div>
+                <div class="tool-item" id="tool-text" onclick="setTool('text')" title="Texto (T)">
+                    <i class="fa-solid fa-font"></i> Texto
+                </div>
+                <div class="tool-item" id="tool-strike" onclick="setTool('strike')" title="Tachar (S)">
+                    <i class="fa-solid fa-strikethrough"></i> Tachar
+                </div>
+                <div class="tool-item" id="tool-redact" onclick="setTool('redact')" title="Censurar (R)">
+                    <i class="fa-solid fa-square-full"></i> Censurar
+                </div>
+            </div>
+
+            <div class="dm-divider" style="width: 100%; height: 1px; background: #444; margin: 0;"></div>
+
+            <div class="dm-panel-section">
+                <div class="dm-panel-title">Colores</div>
+                <div class="color-grid">
+                    <div class="color-swatch active" style="background: #000000;" onclick="setColor('#000000', this)"></div>
+                    <div class="color-swatch" style="background: #db4437;" onclick="setColor('#db4437', this)"></div>
+                    <div class="color-swatch" style="background: #4285f4;" onclick="setColor('#4285f4', this)"></div>
+                    <div class="color-swatch" style="background: #0f9d58;" onclick="setColor('#0f9d58', this)"></div>
+                    <div class="color-swatch" style="background: #f4b400;" onclick="setColor('#f4b400', this)"></div>
+                </div>
+            </div>
+            
+            <div style="flex:1"></div>
+            <div class="dm-panel-title" id="fileInfoLabel">Sin archivo</div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="dm-canvas-container" id="canvasContainer">
+            <div id="zoomWrapper" class="dm-zoom-wrapper">
+                <div id="placeholderMsg" style="margin-top: 100px; text-align: center; color: #9aa0a6;">
+                    <i class="fa-regular fa-file-pdf" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                    <p>Arrastra o abre un PDF</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusToast" class="dm-status">Listo</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- State ---
+    let currentDoc = null;
+    let fileObj = null;
+    let scale = 1.0; 
+    let visualScale = 1.0; // Para el zoom visual (CSS)
+    let currentTool = "ink";
+    let currentColor = "#000000";
+    let isFitWidth = false;
+    let annotations = {}; 
+    let currentPage = 1;
+    let renderTimeout = null;
+
+    // --- UI Refs ---
+    const container = document.getElementById('canvasContainer');
+    const zoomWrapper = document.getElementById('zoomWrapper');
+    const zoomLabel = document.getElementById('zoomLabel');
+    const pageInput = document.getElementById('pageInput');
+    const totalPagesEl = document.getElementById('totalPages');
+    const statusToast = document.getElementById('statusToast');
+    const placeholder = document.getElementById('placeholderMsg');
+    const fileInfoLabel = document.getElementById('fileInfoLabel');
+
+    // --- Init ---
+    document.addEventListener('DOMContentLoaded', () => {
+        container.addEventListener('wheel', handleZoomWheel, { passive: false });
+        document.addEventListener('keydown', handleKeyShortcuts);
+    });
+
+    // --- Tools & Colors ---
+    function setTool(tool) {
+        currentTool = tool;
+        document.querySelectorAll('.tool-item').forEach(el => el.classList.remove('selected'));
+        const btn = document.getElementById(`tool-${tool}`);
+        if(btn) btn.classList.add('selected');
+        
+        showStatus(`Herramienta: ${tool.toUpperCase()}`);
+        updateCursor();
+    }
+
+    function setColor(color, elem) {
+        currentColor = color;
+        document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+        if(elem) elem.classList.add('active');
+    }
+
+    function updateCursor() {
+        container.classList.remove('cursor-pen', 'cursor-crosshair', 'cursor-text');
+        if (['highlight', 'redact', 'strike'].includes(currentTool)) container.classList.add('cursor-crosshair');
+        if (currentTool === 'text') container.classList.add('cursor-text');
+    }
+
+    function showStatus(msg) {
+        statusToast.textContent = msg;
+        statusToast.classList.add('visible');
+        setTimeout(() => statusToast.classList.remove('visible'), 2000);
+    }
+
+    // --- PDF Logic ---
+    async function loadPDF(file) {
+        if (!file) return;
+        fileObj = file;
+        try {
+            placeholder.style.display = 'none';
+            zoomWrapper.innerHTML = ''; // Start fresh
+            
+            const arrayBuffer = await file.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+            currentDoc = await loadingTask.promise;
+            
+            totalPagesEl.textContent = currentDoc.numPages;
+            pageInput.max = currentDoc.numPages;
+            fileInfoLabel.textContent = `${currentDoc.numPages} Páginas`;
+            annotations = {};
+            currentPage = 1;
+            pageInput.value = 1;
+            
+            // Initial Render
+            await renderAllPages();
+            showStatus(`PDF Cargado`);
+        } catch (e) {
+            console.error(e);
+            alert("Error: " + e.message);
+        }
+    }
+
+    async function renderAllPages() {
+        if (!currentDoc) return;
+        
+        // Reset Visual Zoom
+        visualScale = 1.0;
+        zoomWrapper.style.transform = `scale(1)`;
+        
+        zoomWrapper.innerHTML = ''; 
+        
+        for (let i = 1; i <= currentDoc.numPages; i++) {
+            await renderPage(i);
+        }
+    }
+
+    async function renderPage(pageNum) {
+        const page = await currentDoc.getPage(pageNum);
+        let viewport = page.getViewport({ scale: scale });
+        
+        if (isFitWidth) {
+             const containerWidth = container.clientWidth - 60; 
+             const unscaled = page.getViewport({ scale: 1 });
+             const newScale = containerWidth / unscaled.width;
+             // Only set global scale if first page (simplified)
+             if(pageNum === 1) {
+                 scale = newScale;
+                 updateZoomLabel();
+             }
+             viewport = page.getViewport({ scale: scale });
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pdf-page-wrapper';
+        wrapper.style.width = `${viewport.width}px`;
+        wrapper.style.height = `${viewport.height}px`;
+        wrapper.id = `page-wrapper-${pageNum}`;
+        wrapper.dataset.pageNumber = pageNum;
+
+        // Canvas
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        wrapper.appendChild(canvas);
+
+        // Annotation Layer
+        const annotCanvas = document.createElement('canvas');
+        annotCanvas.className = 'pdf-canvas-layer';
+        annotCanvas.width = viewport.width;
+        annotCanvas.height = viewport.height;
+        
+        setupDrawingEvents(annotCanvas, pageNum - 1);
+        
+        wrapper.appendChild(annotCanvas);
+        zoomWrapper.appendChild(wrapper);
+        
+        observer.observe(wrapper);
+    }
+    
+    // --- Intersection Observer ---
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const num = entry.target.dataset.pageNumber;
+                currentPage = parseInt(num);
+                pageInput.value = currentPage;
+            }
+        });
+    }, { threshold: 0.1 });
+
+    // --- Navigation & Zoom (SMOOTH) ---
+    function jumpToPage(val) {
+        const num = parseInt(val);
+        if (num >= 1 && num <= currentDoc.numPages) {
+            const target = document.getElementById(`page-wrapper-${num}`);
+            if (target) target.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+    }
+    function nextPage() { if (currentPage < currentDoc.numPages) jumpToPage(currentPage + 1); }
+    function prevPage() { if (currentPage > 1) jumpToPage(currentPage - 1); }
+
+    function changeZoom(delta, absolute = false) {
+        isFitWidth = false;
+        let newScale;
+        if(absolute) newScale = delta;
+        else newScale = scale + delta;
+        
+        newScale = Math.max(0.2, Math.min(newScale, 5.0));
+        scale = newScale;
+        updateZoomLabel();
+        
+        // Debounced Render
+        if(renderTimeout) clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            renderAllPages(); 
+        }, 100); // 100ms debounce
+    }
+
+    function handleZoomWheel(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            
+            // 1. Calculate new proposed scale
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            let targetScale = scale + delta;
+            targetScale = Math.max(0.2, Math.min(targetScale, 5.0));
+            
+            // 2. Visual CSS Scale immediately
+            // We use 'visualScale' relative to the rendered 'scale'
+            // current rendered = 'scale'. We want to look like 'targetScale'.
+            // visualScale = targetScale / scale (the BASE rendered scale)
+             
+            // To simplify: we just update the global scale variable, but delay rendering
+            // We can try to use CSS scale to fake it until render.
+            // But getting transform-origin right on mouse pointer is hard in 5 mins.
+            // Let's just do standard debounce for now. 
+            
+            scale = targetScale;
+            updateZoomLabel();
+            
+            if(renderTimeout) clearTimeout(renderTimeout);
+            
+            // Show "Zooming..." state?
+            zoomWrapper.style.opacity = "0.7";
+            
+            renderTimeout = setTimeout(() => {
+                zoomWrapper.style.opacity = "1";
+                renderAllPages();
+            }, 200);
+        }
+    }
+    
+    function updateZoomLabel() { zoomLabel.textContent = `${Math.round(scale * 100)}%`; }
+    function toggleFitWidth() {
+        isFitWidth = !isFitWidth;
+        document.getElementById('btnFitWidth').classList.toggle('active', isFitWidth);
+        renderAllPages();
+    }
+
+    // --- Key Shortcuts ---
+    function handleKeyShortcuts(e) {
+        if (e.target.tagName === 'INPUT') return;
+        switch(e.key.toLowerCase()) {
+            case 'p': setTool('ink'); break;
+            case 'h': setTool('highlight'); break;
+            case 't': setTool('text'); break;
+            case 's': setTool('strike'); break;
+            case 'r': setTool('redact'); break;
+            case 'z': if(e.ctrlKey) { e.preventDefault(); undoAction(); } break;
+            case 's': if(e.ctrlKey) { e.preventDefault(); savePDF(); } break;
+        }
+    }
+
+    // --- Drawing Logic ---
+    function setupDrawingEvents(canvas, pageIdx) {
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let startX, startY;
+        let points = []; 
+
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Scale coords back to canvas size (in case of CSS zoom)
+            const cssScaleX = canvas.width / rect.width;
+            const cssScaleY = canvas.height / rect.height;
+            return { 
+                x: (e.clientX - rect.left) * cssScaleX, 
+                y: (e.clientY - rect.top) * cssScaleY 
+            };
+        };
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (currentTool === 'text') {
+                const { x, y } = getPos(e);
+                const text = prompt("Texto:"); 
+                if (text) {
+                    addAnnotation(pageIdx, { type: 'text', x: x/canvas.width, y: y/canvas.height, text, color: currentColor });
+                    redrawAnnotations(canvas, pageIdx);
+                }
+                return;
+            }
+            isDrawing = true;
+            const p = getPos(e);
+            startX = p.x; startY = p.y;
+            
+            if (currentTool === 'ink') {
+                points = [{ x: startX, y: startY }];
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const { x, y } = getPos(e);
+
+            if (currentTool === 'ink') {
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                points.push({ x, y });
+            } else {
+                redrawAnnotations(canvas, pageIdx);
+                ctx.fillStyle = currentColor; ctx.strokeStyle = currentColor;
+                
+                if (currentTool === 'highlight') {
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillRect(startX, startY, x - startX, y - startY);
+                    ctx.globalAlpha = 1.0;
+                } else if (currentTool === 'redact') {
+                    ctx.fillStyle = currentColor;
+                    ctx.fillRect(startX, startY, x - startX, y - startY);
+                } else if (currentTool === 'strike') {
+                    ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(x, y);
+                    ctx.lineWidth = 2; ctx.stroke();
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            const { x, y } = getPos(e);
+            const w = canvas.width; const h = canvas.height;
+            
+            if (currentTool === 'ink') {
+                const normPoints = points.map(p => ({ x: p.x / w, y: p.y / h }));
+                addAnnotation(pageIdx, { type: 'ink', points: normPoints, color: currentColor });
+            } else if (['highlight', 'redact'].includes(currentTool)) {
+                addAnnotation(pageIdx, {
+                    type: currentTool,
+                    rect: [Math.min(startX, x)/w, Math.min(startY, y)/h, Math.abs(x - startX)/w, Math.abs(y - startY)/h],
+                    color: currentColor
+                });
+            } else if (currentTool === 'strike') {
+                 addAnnotation(pageIdx, { type: 'strike', p1: {x:startX/w, y:startY/h}, p2: {x:x/w, y:y/h}, color: currentColor });
+            }
+            redrawAnnotations(canvas, pageIdx);
+        });
+        
+        redrawAnnotations(canvas, pageIdx);
+    }
+    
+    function addAnnotation(pageIdx, ann) {
+        const k = String(pageIdx);
+        if (!annotations[k]) annotations[k] = [];
+        annotations[k].push(ann);
+    }
+    
+    function redrawAnnotations(canvas, pageIdx) {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width; const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        
+        const list = annotations[String(pageIdx)] || [];
+        list.forEach(ann => {
+            ctx.fillStyle = ann.color; ctx.strokeStyle = ann.color;
+            if (ann.type === 'highlight') {
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(ann.rect[0]*w, ann.rect[1]*h, ann.rect[2]*w, ann.rect[3]*h);
+                ctx.globalAlpha = 1.0;
+            } else if (ann.type === 'redact') {
+                ctx.fillRect(ann.rect[0]*w, ann.rect[1]*h, ann.rect[2]*w, ann.rect[3]*h);
+            } else if (ann.type === 'strike') {
+                ctx.beginPath();
+                ctx.moveTo(ann.p1.x*w, ann.p1.y*h);
+                ctx.lineTo(ann.p2.x*w, ann.p2.y*h);
+                ctx.lineWidth = 2; ctx.stroke();
+            } else if (ann.type === 'ink') {
+                ctx.beginPath();
+                if(ann.points.length){
+                    ctx.moveTo(ann.points[0].x*w, ann.points[0].y*h);
+                    for(let p of ann.points) ctx.lineTo(p.x*w, p.y*h);
+                }
+                ctx.lineWidth = 3; ctx.lineCap='round'; ctx.stroke();
+            } else if (ann.type === 'text') {
+                ctx.font = `${16 * scale}px Arial`;
+                ctx.fillText(ann.text, ann.x*w, ann.y*h);
+            }
+        });
+    }
+
+    function undoAction() {
+        const keys = Object.keys(annotations).sort(); 
+        for(let i=keys.length-1; i>=0; i--) {
+            if(annotations[keys[i]].length > 0) {
+                annotations[keys[i]].pop();
+                const wrapper = document.querySelector(`.pdf-page-wrapper[data-page-number="${parseInt(keys[i])+1}"]`);
+                if(wrapper) {
+                    const c = wrapper.querySelector('.pdf-canvas-layer');
+                    redrawAnnotations(c, parseInt(keys[i]));
+                }
+                showStatus("Deshacer");
+                return;
+            }
+        }
+    }
+
+    async function savePDF() {
+        if (!fileObj) return alert("Carga un PDF primero");
+        showStatus("Procesando...");
+        const formData = new FormData();
+        formData.append("file", fileObj);
+        formData.append("annotations", JSON.stringify(annotations));
+        try {
+            const resp = await fetch("/datamask/process", { method: "POST", body: formData });
+            const res = await resp.json();
+            if(res.status === 'success') {
+                const link = document.createElement('a');
+                link.href = "data:application/pdf;base64," + res.file;
+                link.download = "datamask_editado.pdf";
+                link.click();
+                showStatus("Descarga lista");
+            } else { alert("Error: " + res.error); }
+        } catch(e) { alert("Error: " + e.message); }
+    }
+</script>
+{% endblock %}

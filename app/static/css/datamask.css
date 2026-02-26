@@ -1,0 +1,301 @@
+/* --- DATAMASK MODULE CSS (Estilo DocCheck / Light) --- */
+
+:root {
+    --bg-page: #e4f3ff;
+    --bg-panel: #ffffff;
+    --primary-blue: #0163ac;
+    --primary-red: #ae0d41;
+    --text-main: #1e3a5f;
+    --text-muted: #666;
+    --border-light: #e0e0e0;
+    --accent-hover: #f0f7ff;
+}
+
+/* Layout Principal */
+.datamask-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px);
+    background-color: var(--bg-page);
+    overflow: hidden;
+    color: var(--text-main);
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Barra Superior (Toolbar) */
+.dm-toolbar {
+    height: 60px;
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 15px;
+    justify-content: space-between;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    z-index: 100;
+}
+
+.dm-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dm-title {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--primary-blue);
+    margin-right: 15px;
+    white-space: nowrap;
+}
+
+.dm-divider {
+    width: 1px;
+    height: 24px;
+    background-color: var(--border-light);
+    margin: 0 10px;
+}
+
+/* Botones Toolbar */
+.dm-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer !important; /* Force pointer */
+    user-select: none;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.dm-btn:hover {
+    background-color: var(--accent-hover);
+    color: var(--primary-blue);
+    transform: translateY(-1px);
+}
+
+.dm-btn:active {
+    transform: translateY(0);
+}
+
+.dm-btn.active {
+    background-color: var(--primary-blue);
+    color: white;
+}
+
+/* Input de Página (Estilo Pill) */
+.dm-page-control {
+    background: white;
+    border: 1px solid var(--border-light);
+    color: var(--text-main);
+    padding: 4px 8px;
+    border-radius: 100px;
+    width: 50px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.dm-page-control:focus {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.dm-page-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin: 0 5px;
+}
+
+/* Area Principal */
+.dm-workspace {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    padding: 15px;
+    gap: 15px;
+}
+
+/* Sidebar de Herramientas */
+.dm-sidebar {
+    width: 250px;
+    background-color: var(--bg-panel);
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 25px;
+    z-index: 50;
+    overflow-y: auto;
+}
+
+.dm-panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dm-panel-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--primary-blue);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Tool Items */
+.tool-item {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px 15px;
+    gap: 12px;
+    cursor: pointer !important;
+    user-select: none;
+    color: var(--text-main);
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.tool-item:hover {
+    background-color: var(--accent-hover);
+    border-color: var(--border-light);
+}
+
+.tool-item.selected {
+    background-color: var(--primary-blue);
+    color: white;
+    box-shadow: 0 4px 10px rgba(1, 99, 172, 0.2);
+}
+
+.tool-item i {
+    font-size: 16px;
+    width: 24px;
+    text-align: center;
+}
+
+/* Color Grid */
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer !important;
+    border: 3px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    border-color: var(--bg-panel);
+    box-shadow: 0 0 0 2px var(--primary-blue);
+}
+
+/* Canvas Area */
+.dm-canvas-container {
+    flex: 1;
+    background-color: transparent; /* Transparent to show bg-page */
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    padding: 0 20px 40px 20px;
+    border-radius: 16px;
+    /* Optional: Inner shadow for depth? No, layout clean is better */
+}
+
+/* Wrapper for Scaling */
+.dm-zoom-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform-origin: top center;
+    transition: transform 0.1s linear; 
+}
+
+.pdf-page-wrapper {
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1); 
+    margin-bottom: 30px;
+    background-color: white;
+    border-radius: 4px; 
+}
+
+/* Capa de Anotaciones (Canvas Overlay) */
+.pdf-canvas-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    cursor: crosshair; /* Default fallback */
+}
+
+/* Status Toast */
+.dm-status {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 1000;
+    box-shadow: 0 10px 25px rgba(1, 99, 172, 0.3);
+}
+.dm-status.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-5px);
+}
+
+/* Scrollbar styling for light theme */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+}
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 6px;
+    border: 2px solid #e4f3ff;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #bbb;
+}
+
+/* Cursors */
+.cursor-pen { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l5.5 5.5"/></svg>') 0 24, auto; } 
+.cursor-crosshair { cursor: crosshair; }
+.cursor-text { cursor: text; }

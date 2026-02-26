@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Portal Corporativo</title>
+
+    <!-- Fuentes Google -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Poppins:wght@600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Pequeños ajustes para los nuevos elementos en el diseño anterior */
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        .login-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-gray);
+            cursor: pointer;
+        }
+        .login-link {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .login-link:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            margin-top: 30px; /* Space for the floating icon */
+            border: 1px solid #fecaca;
+        }
+        .success-message {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            margin-top: 30px;
+            border: 1px solid #bbf7d0;
+        }
+    </style>
+</head>
+
+<body class="login-body">
+
+    <div class="login-card">
+        <!-- Icono Flotante -->
+        <div class="login-floating-icon">
+            <i class="fa-solid fa-user"></i>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="success-message">
+            <i class="fa-solid fa-circle-check"></i> {{ success }}
+        </div>
+        {% endif %}
+
+        <form action="/login" method="POST">
+            <!-- Usuario -->
+            <label class="login-label">Usuario</label>
+            <div class="login-input-group">
+                <i class="fa-solid fa-user login-input-icon"></i>
+                <input type="text" class="login-input" name="username" placeholder="Ingrese su usuario" required>
+            </div>
+
+            <!-- Contraseña -->
+            <label class="login-label">Contraseña</label>
+            <div class="login-input-group">
+                <i class="fa-solid fa-lock login-input-icon"></i>
+                <input type="password" class="login-input" name="password" id="password" placeholder="Ingrese su contraseña" required>
+                <button type="button" class="btn-toggle-eye" onclick="togglePass('password', this)" style="position: absolute; right: 18px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; z-index: 10;">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+
+            <!-- Opciones Extra (Nuevo) -->
+            <div class="login-options">
+                <label class="login-checkbox">
+                    <input type="checkbox" name="remember" value="true"> Recordarme
+                </label>
+                <a href="/forgot-password" class="login-link">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <!-- Botón -->
+            <button type="submit" class="login-btn">
+                Ingresar
+            </button>
+        </form>
+    </div>
+
+    <script>
+        function togglePass(id, btn) {
+            const input = document.getElementById(id);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+</body>
+
+</html>

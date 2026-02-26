@@ -1,0 +1,1021 @@
+/* --- DOCCHECK MODULE CSS (Diseño según mockup) --- */
+
+/* Override: Mantener scrollbar espacio consistente */
+html {
+    scrollbar-gutter: stable;
+}
+
+/* Override: Anular margin/padding del contenedor principal */
+.main-content-area {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+/* Página principal - SIN SCROLL en desktop */
+/* Página principal - CON SCROLL en desktop para diseño vertical */
+.doc-page {
+    width: 100%;
+    height: calc(100vh - 70px);
+    background: #e4f3ff;
+    padding: 15px 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    overflow-y: auto; /* Enable scroll for vertical layout */
+}
+
+/* ===== FILA 1: NAVEGACIÓN CENTRADA ===== */
+.nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    width: 100%; /* Ensure it takes width to center properly */
+    max-width: 1000px;
+}
+
+/* ===== FILA 2: BOTONES + CAMPOS PILL ===== */
+.header-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 1000px;
+}
+
+/* Botón icono (upload, save) */
+.btn-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    background: #ae0d41;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-icon:hover {
+    opacity: 0.85;
+    transform: scale(1.05);
+}
+
+/* Botón navegación (prev/next) */
+.btn-nav {
+    width: 72px;
+    height: 45px;
+    border-radius: 20px;
+    background: #ae0d41;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-nav:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+
+/* ===== NUEVO ESTILO INPUTS (COMO BPSEARCH) ===== */
+
+/* Contenedor principal del input (Cápsula blanca) */
+.entry-box {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 100px;
+    height: 48px;
+    padding: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e0e0e0;
+    flex: 1; /* Ocupa el espacio disponible en flex parents */
+    min-width: 250px;
+}
+
+/* Etiqueta azul interna */
+.entry-label {
+    display: flex;
+    min-width: 160px; /* Ancho fijo para que todos los labels sean iguales */
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    background-color: #0163ac;
+    border-radius: 100px;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 11px; /* Reducido para que quepa mejor */
+    z-index: 2;
+    padding: 0 12px; /* Reducido padding */
+    text-transform: uppercase;
+}
+
+/* Input real transparente */
+.entry-input {
+    flex: 1;
+    border: none;
+    height: 100%;
+    background: transparent;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #333;
+    padding-left: 15px;
+    outline: none;
+    border-radius: 0 100px 100px 0;
+    font-weight: 600;
+    text-align: center; /* Centrar el texto */
+}
+
+.entry-input::placeholder {
+    color: #999;
+    font-weight: 500;
+}
+
+/* Ajustes específicos para filas de DocCheck */
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Use original gap preference maybe? 15px was original grid gap */
+    width: 100%;
+    max-width: 1000px;
+}
+
+/* Fix for nav row items stretching */
+.nav-row .entry-box {
+    flex: 0 1 auto;
+    min-width: auto; /* Allow it to be smaller than the global 250px if needed, or stick to inline style */
+}
+
+/* Compact labels for header row (N° REGISTRO, PAQUETE, CAJA, FOLIOS) */
+.nav-row .entry-label,
+.header-row .entry-label {
+    min-width: 120px !important; /* Smaller width for compact fields */
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* Compact field inputs - use negative margin to visually center */
+.nav-row .entry-input,
+.header-row .entry-input {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: -60px; /* Shift left by half of label width (120px / 2) */
+    text-align: center !important;
+}
+
+/* Heredados pero reajustados */
+.field-row {
+    display: flex;
+    width: 100%;
+}
+
+/* Reset de inputs */
+.doc-page input {
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.doc-page input::placeholder {
+    color: #7ba3c7;
+}
+
+/* ===== SECCIÓN DE ACCIONES ===== */
+.action-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.btn-action {
+    height: 45px;
+    padding: 0 25px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-consultar {
+    background: #ae0d41;
+}
+
+.export-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Botones Exportar - Estilo bpsearch */
+.btn-export,
+.btn-export-excel {
+    border: none !important;
+    padding: 0 20px;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.btn-export:hover,
+.btn-export-excel:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.export-label {
+    background-color: white;
+    border-radius: 50px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* TXT - Azul */
+.btn-export {
+    background-color: #0066b3;
+    color: white;
+}
+
+.btn-export .export-label {
+    color: #0066b3;
+}
+
+/* Excel - Verde */
+.btn-export-excel {
+    background-color: #2d8e5f;
+    color: white;
+}
+
+.btn-export-excel .export-label {
+    color: #2d8e5f;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablets */
+@media (max-width: 992px) {
+    .doc-page {
+        padding: 12px 20px;
+        height: auto;
+        min-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+
+    .header-row {
+        gap: 12px;
+    }
+
+    .btn-icon,
+    .btn-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .field-label {
+        min-width: 150px;
+        font-size: 11px;
+        padding: 8px 15px;
+    }
+
+    .pill-label {
+        font-size: 10px;
+        padding: 8px 14px;
+    }
+
+    .btn-action {
+        padding: 0 18px;
+        font-size: 12px;
+        height: 42px;
+    }
+}
+
+/* Móviles */
+@media (max-width: 768px) {
+    .doc-page {
+        padding: 10px 15px;
+        gap: 8px;
+        height: auto;
+        min-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+
+    .nav-row {
+        gap: 10px;
+    }
+
+    .header-row {
+        gap: 10px;
+    }
+
+    .btn-icon,
+    .btn-nav {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+        border-radius: 14px;
+    }
+
+    .field-label {
+        min-width: 120px;
+        font-size: 10px;
+        padding: 7px 12px;
+    }
+
+    .field-input {
+        height: 34px;
+        padding: 0 12px 0 22px;
+    }
+
+    .pill-label {
+        font-size: 9px;
+        padding: 7px 12px;
+    }
+
+    .pill-input {
+        height: 34px;
+        width: 70px;
+        font-size: 11px;
+    }
+
+    .action-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .export-group {
+        flex-direction: column;
+    }
+
+    .btn-action {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+    .field-label {
+        min-width: 100px;
+        font-size: 9px;
+        padding: 6px 10px;
+    }
+
+    .field-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .field-input {
+        margin-left: 0;
+        margin-top: -8px;
+        border-radius: 12px;
+        padding: 0 12px;
+    }
+
+    .field-label {
+        border-radius: 12px 12px 0 0;
+        text-align: left;
+        padding-left: 15px;
+    }
+}
+
+/* ===== MODAL DE EXPORTACIÓN ===== */
+.export-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.export-modal {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.2s ease-out;
+}
+
+.export-modal h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0163ac;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.export-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: #f0f7ff;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.export-option:hover {
+    background: #e0efff;
+}
+
+.export-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #0163ac;
+}
+
+.export-option span {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.export-option input[type="text"] {
+    flex: 1;
+    height: 36px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.export-option input[type="text"]:focus {
+    border-color: #0163ac;
+}
+
+.export-option input[type="text"]:disabled {
+    background: #f5f5f5;
+    color: #999;
+}
+
+.export-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-export-cancel {
+    padding: 12px 25px;
+    border-radius: 50px;
+    border: 2px solid #ccc;
+    background: white;
+    color: #666;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-export-cancel:hover {
+    border-color: #999;
+    color: #333;
+}
+
+.btn-export-confirm {
+    padding: 12px 30px;
+    border-radius: 50px;
+    border: none;
+    background: #0163ac;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-export-confirm:hover {
+    background: #014f88;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ===== INDICADOR DE PROGRESO ===== */
+.progress-indicator {
+    background: white;
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #0163ac;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-left: 15px;
+}
+
+.progress-indicator span {
+    color: #ae0d41;
+}
+
+/* ===== TOAST NOTIFICATIONS ===== */
+#toast-container {
+    position: fixed;
+    top: 85px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    padding: 14px 18px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-out;
+    pointer-events: auto;
+    min-width: 280px;
+    max-width: 400px;
+}
+
+.toast-exit {
+    animation: slideOutRight 0.3s ease-out forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.toast-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.toast-success .toast-icon {
+    color: #2d8e5f;
+}
+
+.toast-error .toast-icon {
+    color: #dc3545;
+}
+
+.toast-info .toast-icon {
+    color: #0163ac;
+}
+
+.toast-warning .toast-icon {
+    color: #f59e0b;
+}
+
+.toast-success {
+    border-left: 4px solid #2d8e5f;
+}
+
+.toast-error {
+    border-left: 4px solid #dc3545;
+}
+
+.toast-info {
+    border-left: 4px solid #0163ac;
+}
+
+.toast-warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.toast-message {
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e3a5f;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.toast-close:hover {
+    color: #333;
+}
+
+/* ===== MODAL DE CONFIRMACIÓN ===== */
+.confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.confirm-modal {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.2s ease-out;
+}
+
+.confirm-icon {
+    width: 60px;
+    height: 60px;
+    background: #fff3cd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 28px;
+    color: #f59e0b;
+}
+
+.confirm-modal h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin-bottom: 10px;
+}
+
+.confirm-modal p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.confirm-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.confirm-btn {
+    padding: 12px 20px;
+    border-radius: 50px;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.confirm-btn-primary {
+    background: #0163ac;
+    color: white;
+}
+
+.confirm-btn-primary:hover {
+    background: #014f88;
+    transform: translateY(-2px);
+}
+
+.confirm-btn-secondary {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.confirm-btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.confirm-btn-cancel {
+    background: transparent;
+    color: #999;
+    border: 1px solid #ddd;
+}
+
+.confirm-btn-cancel:hover {
+    border-color: #999;
+    color: #666;
+}
+
+/* ===== MODAL DE EXPORTACIÓN V2 (Visual Cards) ===== */
+.export-modal-v2 {
+    background: white;
+    border-radius: 24px;
+    padding: 40px;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.25s ease-out;
+}
+
+.export-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: #0163ac;
+    margin-bottom: 30px;
+    letter-spacing: 0.5px;
+}
+
+.export-cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.export-card {
+    width: 140px;
+    height: 160px;
+    border: 3px solid #0163ac;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: white;
+}
+
+.export-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(1, 99, 172, 0.2);
+}
+
+.export-card.selected {
+    background: #f0f7ff;
+    border-color: #0163ac;
+    box-shadow: 0 0 0 4px rgba(1, 99, 172, 0.15);
+}
+
+.export-card-icon {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 12px;
+    color: #ae0d41;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+}
+
+.export-card-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.export-card-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #0163ac;
+}
+
+/* Sección input de caja */
+.export-caja-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.export-caja-field {
+    display: flex;
+    align-items: center;
+}
+
+.export-caja-label {
+    background: #0163ac;
+    color: white;
+    padding: 12px 22px;
+    border-radius: 100px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.export-caja-input {
+    height: 44px;
+    width: 120px;
+    background: #e4f3ff;
+    border: none;
+    border-radius: 100px;
+    padding: 0 20px;
+    margin-left: -15px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    z-index: 1;
+    color: #1e3a5f;
+}
+
+.export-caja-input:focus {
+    box-shadow: 0 0 0 3px rgba(1, 99, 172, 0.2);
+}
+
+/* Botón exportar principal */
+.export-btn-submit {
+    background: #ae0d41;
+    color: white;
+    border: none;
+    padding: 16px 60px;
+    border-radius: 100px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 6px 20px rgba(174, 13, 65, 0.3);
+}
+
+.export-btn-submit:hover {
+    background: #8a0a34;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(174, 13, 65, 0.4);
+}
+
+/* ===== RESPONSIVE PARA NUEVOS ELEMENTOS ===== */
+@media (max-width: 768px) {
+    .progress-indicator {
+        padding: 8px 15px;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+
+    #toast-container {
+        top: auto;
+        bottom: 20px;
+        right: 10px;
+        left: 10px;
+    }
+
+    .toast {
+        min-width: auto;
+        max-width: 100%;
+    }
+
+    .export-modal-v2 {
+        padding: 25px;
+    }
+
+    .export-cards {
+        gap: 15px;
+    }
+
+    .export-card {
+        width: 120px;
+        height: 140px;
+    }
+
+    .export-card-icon {
+        width: 55px;
+        height: 55px;
+        font-size: 40px;
+    }
+
+    .export-card-label {
+        font-size: 15px;
+    }
+
+    .confirm-actions {
+        gap: 8px;
+    }
+
+    .confirm-btn {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .progress-indicator {
+        display: none;
+    }
+
+    .export-cards {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .export-card {
+        width: 100%;
+        max-width: 180px;
+        height: 120px;
+        flex-direction: row;
+        padding: 0 20px;
+        gap: 15px;
+    }
+
+    .export-card-icon {
+        width: 45px;
+        height: 45px;
+        margin-bottom: 0;
+        font-size: 35px;
+    }
+}

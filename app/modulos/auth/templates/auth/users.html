@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios - SICODE{% endblock %}
+
+{% block head_extra %}
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .admin-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 25px;
+        align-items: start;
+    }
+
+    .card {
+        background: white;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border-color);
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .card-header h3 {
+        font-family: var(--font-main);
+        font-size: 16px;
+        margin: 0;
+        color: var(--text-dark);
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-gray);
+        margin-bottom: 6px;
+    }
+
+    .admin-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border-color);
+        border-radius: var(--radius-md);
+        font-size: 14px;
+        outline: none;
+        transition: 0.2s;
+    }
+
+    .admin-input:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(1, 99, 172, 0.1);
+    }
+
+    .btn-admin {
+        width: 100%;
+        padding: 12px;
+        border-radius: 50px;
+        border: none;
+        font-family: var(--font-main);
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: var(--primary-blue);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-blue-hover);
+        transform: translateY(-2px);
+    }
+
+    .btn-outline {
+        background: white;
+        border: 1.5px solid var(--border-color);
+        color: var(--text-gray);
+        margin-top: 10px;
+    }
+
+    .btn-outline:hover {
+        background: #f8fafc;
+        color: var(--primary-blue);
+        border-color: var(--primary-blue);
+    }
+
+    /* Table Styles */
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .admin-table th {
+        text-align: left;
+        padding: 12px 15px;
+        background: #f8fafc;
+        color: var(--text-gray);
+        font-weight: 600;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .admin-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-dark);
+    }
+
+    .admin-table tr:hover {
+        background: #f1f5f9;
+        cursor: pointer;
+    }
+
+    .role-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .role-admin { background: #fee2e2; color: #991b1b; }
+    .role-supervisor { background: #fef3c7; color: #92400e; }
+    .role-colaborador { background: #dcfce7; color: #166534; }
+    .role-default { background: #e2e8f0; color: #475569; }
+
+    .action-btns {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .btn-delete { background: #fee2e2; color: #ef4444; }
+    .btn-delete:hover { background: #ef4444; color: white; }
+
+    .alert {
+        padding: 12px 15px;
+        border-radius: var(--radius-md);
+        margin-bottom: 20px;
+        font-size: 13px;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    @media (max-width: 900px) {
+        .admin-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block back_button %}
+<a href="/" style="margin-right: 15px; color: #555; font-size: 20px; display: flex; align-items: center; text-decoration: none;" title="Volver al Inicio">
+    <i class="fa-solid fa-house"></i>
+</a>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">Administración</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Gestión de Usuarios</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container animate__animated animate__fadeIn">
+    
+    {% if error %}
+    <div class="alert alert-error">
+        <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="admin-grid">
+        <!-- Panel de Edición/Creación -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-solid fa-user-plus" id="form-icon"></i>
+                <h3 id="form-title">Crear Nuevo Usuario</h3>
+            </div>
+            <div class="card-body">
+                <form id="userForm" action="/admin/users" method="POST">
+                    <input type="hidden" name="user_id" id="user_id">
+                    
+                    <div class="form-group">
+                        <label>Código Personal</label>
+                        <input type="text" name="codigo" id="codigo" class="admin-input" placeholder="Ej: TE78">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nombres</label>
+                        <input type="text" name="nombre" id="nombre" class="admin-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Apellidos</label>
+                        <input type="text" name="apellido" id="apellido" class="admin-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" name="correo" id="correo" class="admin-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rol en el Sistema</label>
+                        <select name="role" id="role" class="admin-input" required>
+                            {% for r in roles %}
+                            <option value="{{ r }}">{{ r }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Usuario (Login)</label>
+                        <input type="text" name="username" id="username" class="admin-input" placeholder="Opcional (se genera del correo)">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" name="password" id="password" class="admin-input" placeholder="Dejar vacío para no cambiar">
+                        <p style="font-size: 11px; color: #94a3b8; margin-top: 5px;">Por defecto: 123456</p>
+                    </div>
+
+                    <button type="submit" class="btn-admin btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Usuario
+                    </button>
+                    
+                    <button type="button" class="btn-admin btn-outline" onclick="resetForm()">
+                        <i class="fa-solid fa-eraser"></i> Limpiar Formulario
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de Usuarios -->
+        <div class="card">
+            <div class="card-header" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-users"></i>
+                    <h3>Usuarios Registrados</h3>
+                </div>
+                <span style="font-size: 12px; color: var(--text-gray); background: #e2e8f0; padding: 2px 8px; border-radius: 10px; font-weight: 600;">
+                    {{ users|length }} total
+                </span>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Cód</th>
+                                <th>Nombre Completo</th>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr onclick="editUser({{ u.id }}, '{{ u.codigo or '' }}', '{{ u.nombre }}', '{{ u.apellido }}', '{{ u.correo }}', '{{ u.username }}', '{{ u.role }}')">
+                                <td style="font-weight: 700; color: var(--primary-blue);">{{ u.codigo or '-' }}</td>
+                                <td>
+                                    <div style="font-weight: 600;">{{ u.nombre }} {{ u.apellido }}</div>
+                                    <div style="font-size: 11px; color: #64748b;">{{ u.correo }}</div>
+                                </td>
+                                <td><code style="background: #f1f5f9; padding: 2px 4px; border-radius: 4px;">{{ u.username }}</code></td>
+                                <td>
+                                    {% set role_class = 'role-default' %}
+                                    {% if u.role == 'Administrador' %}{% set role_class = 'role-admin' %}
+                                    {% elif u.role == 'Supervisor' %}{% set role_class = 'role-supervisor' %}
+                                    {% elif u.role == 'Colaborador' %}{% set role_class = 'role-colaborador' %}
+                                    {% endif %}
+                                    <span class="role-badge {{ role_class }}">{{ u.role }}</span>
+                                </td>
+                                <td>
+                                    <div class="action-btns">
+                                        <form action="/admin/users/{{ u.id }}/delete" method="POST" onsubmit="return confirm('¿Eliminar usuario?')">
+                                            <button type="submit" class="btn-icon btn-delete" title="Eliminar">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function editUser(id, codigo, nombre, apellido, correo, username, role) {
+        document.getElementById('user_id').value = id;
+        document.getElementById('codigo').value = codigo;
+        document.getElementById('nombre').value = nombre;
+        document.getElementById('apellido').value = apellido;
+        document.getElementById('correo').value = correo;
+        document.getElementById('username').value = username;
+        document.getElementById('role').value = role;
+        
+        document.getElementById('form-title').innerText = "Editar Usuario";
+        document.getElementById('form-icon').className = "fa-solid fa-user-pen";
+        
+        // Enfocar primer campo
+        document.getElementById('nombre').focus();
+        
+        // Resaltar visualmente
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        document.getElementById('userForm').reset();
+        document.getElementById('user_id').value = "";
+        document.getElementById('form-title').innerText = "Crear Nuevo Usuario";
+        document.getElementById('form-icon').className = "fa-solid fa-user-plus";
+    }
+</script>
+{% endblock %}

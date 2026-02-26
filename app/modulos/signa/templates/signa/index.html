@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Signa - Verificador de Firmas{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/signa.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+{% endblock %}
+
+{% block module_title %}
+<div class="module-header-title">
+    <span class="module-name">Signa</span>
+    <span class="separator">|</span>
+    <span class="module-desc">Verificador de Firmas</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="signa-wrapper">
+    <!-- Toolbar -->
+    <div class="signa-toolbar">
+        <div class="header-left">
+            <h1>Verificador Masivo de Firmas</h1>
+            <p>Auditoría de Resoluciones Coactivas - Reconocimiento de Patrones</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-process" style="background: var(--primary-alt); width: auto; padding: 10px 20px;" onclick="clearAll()">
+                <i data-lucide="trash-2" width="16"></i> Limpiar
+            </button>
+        </div>
+    </div>
+
+    <div class="signa-main-grid">
+        <!-- Sidebar Panel -->
+        <div class="sidebar-panel">
+            <div class="section-title">
+                <i data-lucide="folder-search" width="18"></i> Origen de Datos
+            </div>
+
+            <div class="form-group">
+                <label>Directorio de Documentos (PDF)</label>
+                <div class="folder-select-card" onclick="selectFolder()">
+                    <div class="folder-icon-wrapper">
+                        <i data-lucide="folder-plus"></i>
+                    </div>
+                    <div class="folder-label">SELECCIONAR CARPETA</div>
+                </div>
+                <div id="pathDisplay" class="path-display">
+                    <!-- Path text injected here -->
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 30px;">
+                <button id="btnProcess" class="btn-process" onclick="startProcess()" disabled>
+                    <i data-lucide="play" width="18"></i> Iniciar Verificación
+                </button>
+            </div>
+
+            <div id="downloadArea" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+                <div class="section-title">
+                    <i data-lucide="download" width="18"></i> Reporte Generado
+                </div>
+                <button id="downloadBtn" class="btn-process" style="background: var(--success-green); text-decoration: none;" onclick="downloadReport()">
+                    <i data-lucide="file-excel" width="18"></i> Descargar Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Panel -->
+        <div class="content-panel">
+            <!-- Progress Card -->
+            <div id="progressCard" class="progress-card">
+                <div class="progress-header">
+                    <span class="progress-text" id="progressText">Analizando firmas...</span>
+                    <span class="progress-percent" id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="progressFill" class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <!-- Summary Bar -->
+            <div id="summaryGrid" class="summary-grid">
+                <div class="summary-box info">
+                    <span class="summary-label">Total Archivos</span>
+                    <span class="summary-value" id="countTotal">0</span>
+                </div>
+                <div class="summary-box success">
+                    <span class="summary-label">Firma Válida</span>
+                    <span class="summary-value" id="countValid">0</span>
+                </div>
+                <div class="summary-box error">
+                    <span class="summary-label">Sin Firma / Error</span>
+                    <span class="summary-value" id="countError">0</span>
+                </div>
+            </div>
+
+            <!-- Table/List Card -->
+            <div class="results-card">
+                <div class="section-title">
+                    <i data-lucide="list-checks" width="18"></i> Detalle de Procesamiento
+                </div>
+                
+                <div id="emptyState" class="empty-state">
+                    <i data-lucide="scan-eye" size="48"></i>
+                    <p>Los resultados de la verificación aparecerán aquí.</p>
+                </div>
+
+                <div id="resultsList" class="results-list" style="display: none;">
+                    <!-- Items injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let selectedPath = "";
+    let lastReportFilename = "";
+
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+
+    function selectFolder() {
+        // Since browsers don't allow real folder selection, we use a prompt or fixed test path
+        // but for this app, the user usually inputs a path they have on their machine.
+        const path = prompt("Ingrese la ruta completa de la carpeta con PDFs:", selectedPath || "D:/REPORTE_PDF");
+        if (path) {
+            selectedPath = path;
+            const display = document.getElementById('pathDisplay');
+            display.innerText = selectedPath;
+            display.style.display = 'block';
+            document.getElementById('btnProcess').disabled = false;
+        }
+    }
+
+    function clearAll() {
+        selectedPath = "";
+        lastReportFilename = "";
+        document.getElementById('pathDisplay').style.display = 'none';
+        document.getElementById('btnProcess').disabled = true;
+        document.getElementById('summaryGrid').style.display = 'none';
+        document.getElementById('resultsList').style.display = 'none';
+        document.getElementById('downloadArea').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'flex';
+        document.getElementById('progressCard').style.display = 'none';
+    }
+
+    async function startProcess() {
+        if (!selectedPath) return;
+
+        const btn = document.getElementById('btnProcess');
+        const progressCard = document.getElementById('progressCard');
+        const progressFill = document.getElementById('progressFill');
+        const progressPercent = document.getElementById('progressPercent');
+        const summaryGrid = document.getElementById('summaryGrid');
+        const emptyState = document.getElementById('emptyState');
+        const resultsList = document.getElementById('resultsList');
+        const downloadArea = document.getElementById('downloadArea');
+
+        // UI Reset
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Procesando...`;
+        lucide.createIcons();
+        
+        progressCard.style.display = 'block';
+        progressFill.style.width = '10%';
+        progressPercent.innerText = '10%';
+        
+        summaryGrid.style.display = 'none';
+        emptyState.style.display = 'none';
+        resultsList.style.display = 'none';
+        downloadArea.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append("folder_path", selectedPath);
+
+        try {
+            // Simulated progress while waiting (backend is synchronous for now)
+            let p = 10;
+            const interval = setInterval(() => {
+                if (p < 95) {
+                    p += (95 - p) * 0.1;
+                    progressFill.style.width = p + '%';
+                    progressPercent.innerText = Math.round(p) + '%';
+                }
+            }, 500);
+
+            const resp = await fetch("/signa/verify", {
+                method: "POST",
+                body: formData
+            });
+
+            clearInterval(interval);
+            
+            if (!resp.ok) {
+                const errData = await resp.json();
+                throw new Error(errData.message || "Error en el servidor");
+            }
+
+            const result = await resp.json();
+
+            if (result.status === "success") {
+                progressFill.style.width = '100%';
+                progressPercent.innerText = '100%';
+                
+                // Update Summary
+                document.getElementById('countTotal').innerText = result.summary.total;
+                document.getElementById('countValid').innerText = result.summary.valid;
+                document.getElementById('countError').innerText = result.summary.error;
+                summaryGrid.style.display = 'grid';
+
+                // Update List
+                renderResults(result.data);
+                
+                resultsList.style.display = 'flex';
+                downloadArea.style.display = 'block';
+                lastReportFilename = result.reporte_excel;
+                
+            } else {
+                alert("Error: " + result.message);
+                emptyState.style.display = 'flex';
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert("Error crítico: " + e.message);
+            emptyState.style.display = 'flex';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="play" width="18"></i> Iniciar Verificación`;
+            progressCard.style.display = 'none';
+            lucide.createIcons();
+        }
+    }
+
+    function renderResults(data) {
+        const list = document.getElementById('resultsList');
+        list.innerHTML = '';
+
+        if (data.length === 0) {
+            list.innerHTML = '<div class="empty-state">No se encontraron archivos en la carpeta.</div>';
+            return;
+        }
+
+        data.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'result-item fade-in';
+            div.style.animationDelay = `${index * 0.05}s`;
+
+            const statusClass = item.valid ? 'status-valid' : 'status-invalid';
+            const statusIcon = item.valid ? 'check-circle' : 'x-circle';
+
+            div.innerHTML = `
+                <div class="file-info-cell">
+                    <i data-lucide="file-text" class="pdf-icon"></i>
+                    <div>
+                        <div class="filename" title="${item.filename}">${item.filename}</div>
+                        <div class="firmante-info">${item.firmante || 'SIN FIRMA DETECTADA'}</div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="auxiliar-info" style="margin-bottom: 5px;">${item.auxiliar}</div>
+                    <span class="result-status ${statusClass}">
+                        <i data-lucide="${statusIcon}" width="12" style="margin-right:4px; vertical-align: middle;"></i>
+                        ${item.status}
+                    </span>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+        lucide.createIcons();
+    }
+
+    function downloadReport() {
+        if (!selectedPath || !lastReportFilename) return;
+        
+        // Construct download URL
+        const url = `/signa/download?path=${encodeURIComponent(selectedPath)}&filename=${encodeURIComponent(lastReportFilename)}`;
+        window.location.href = url;
+    }
+</script>
+{% endblock %}
