@@ -1,14 +1,16 @@
-import os
-import shutil
-import uuid
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Response, Depends
+import datetime
+from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Depends
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, Response
+from sqlalchemy.orm import Session
+
 from app.modulos.doccheck.processor import DocProcessor
+from app.modulos.doccheck.models import DocCheckFile
 from app.modulos.auth.dependencies import login_required
+from app.core.database import get_db
 
 router = APIRouter(
-    prefix="/doccheck", 
+    prefix="/doccheck",
     tags=["doccheck"],
     dependencies=[Depends(login_required)]
 )
@@ -18,118 +20,190 @@ templates_dir = settings.get_template_path("app/modulos/doccheck/templates")
 templates_base = settings.get_template_path("app/modulos/inicio/templates")
 templates = Jinja2Templates(directory=[templates_dir, templates_base])
 
-# In-memory session store: { "session_id": DocProcessorInstance }
-sessions = {}
+# Cache en RAM por sesión activa: { user_id: DocProcessor }
+# Evita releer la DB en cada petición durante la misma sesión del servidor
+_cache: dict[int, DocProcessor] = {}
+
+
+def _load_processor(user_id: int, db: Session) -> DocProcessor | None:
+    """
+    Carga el procesador para un usuario:
+    1. Primero busca en RAM (_cache).
+    2. Si no está, lo carga desde la DB.
+    3. Si no tiene archivo guardado, retorna None.
+    """
+    if user_id in _cache:
+        return _cache[user_id]
+
+    record = db.query(DocCheckFile).filter(DocCheckFile.user_id == user_id).first()
+    if record:
+        processor = DocProcessor(record.file_data)
+        _cache[user_id] = processor
+        return processor
+
+    return None
+
+
+def _persist_processor(user_id: int, filename: str, processor: DocProcessor, db: Session):
+    """
+    Guarda/actualiza los bytes del workbook en la DB.
+    Se llama después de cada upload o de cada save_record.
+    """
+    file_bytes = processor.get_workbook_bytes()
+    record = db.query(DocCheckFile).filter(DocCheckFile.user_id == user_id).first()
+
+    if record:
+        record.file_data  = file_bytes
+        record.filename   = filename
+        record.updated_at = datetime.datetime.utcnow()
+    else:
+        record = DocCheckFile(
+            user_id   = user_id,
+            filename  = filename,
+            file_data = file_bytes,
+        )
+        db.add(record)
+
+    db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
 
 @router.get("/")
-async def doccheck_home(request: Request):
-    response = templates.TemplateResponse("doccheck/index.html", {"request": request})
-    
-    # Check if user already has a session
-    items_session = request.cookies.get("doccheck_session_id")
-    if not items_session or items_session not in sessions:
-        new_id = str(uuid.uuid4())
-        response.set_cookie(key="doccheck_session_id", value=new_id)
-        # Initialize empty session (or None until upload)
-        sessions[new_id] = None 
-    
-    # Note: Logic to clear session on reload specific request:
-    # If we want to force clear on reload, we can reset it here:
-    if items_session and items_session in sessions:
-         sessions[items_session] = None # Reset state on reload/home access
-         
-    return response
+async def doccheck_home(request: Request, db: Session = Depends(get_db)):
+    user = request.state.user
+    processor = _load_processor(user.id, db)
+    has_file  = processor is not None
+    count     = processor.record_count() if has_file else 0
+
+    # Obtener nombre del archivo guardado (para mostrarlo en UI)
+    filename = None
+    if has_file:
+        rec = db.query(DocCheckFile).filter(DocCheckFile.user_id == user.id).first()
+        filename = rec.filename if rec else None
+
+    return templates.TemplateResponse("doccheck/index.html", {
+        "request":      request,
+        "has_file":     has_file,
+        "record_count": count,
+        "filename":     filename,
+    })
+
 
 @router.post("/upload")
-async def upload_excel(request: Request, file: UploadFile = File(...)):
-    session_id = request.cookies.get("doccheck_session_id")
-    if not session_id:
-        return JSONResponse(status_code=400, content={"status": "error", "error": "No session ID"})
-    
+async def upload_excel(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    user = request.state.user
     try:
-        # Create unique filename for this session
-        filename = f"temp_doccheck_{session_id}.xlsx"
-        
-        # Save uploaded file
-        with open(filename, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        
-        # Store processor instance in session
-        sessions[session_id] = DocProcessor(filename)
-        
-        return {"status": "success", "count": sessions[session_id].record_count()}
+        file_bytes = await file.read()
+        processor  = DocProcessor(file_bytes)
+
+        # Guardar en RAM
+        _cache[user.id] = processor
+
+        # Persistir en DB
+        _persist_processor(user.id, file.filename or "doccheck.xlsx", processor, db)
+
+        return {"status": "success", "count": processor.record_count()}
     except Exception as e:
         return JSONResponse(status_code=500, content={"status": "error", "error": str(e)})
 
+
 @router.get("/record/{idx}")
-async def get_record(idx: int, request: Request):
-    session_id = request.cookies.get("doccheck_session_id")
-    processor = sessions.get(session_id)
-    
+async def get_record(idx: int, request: Request, db: Session = Depends(get_db)):
+    processor = _load_processor(request.state.user.id, db)
     if not processor:
         return JSONResponse(status_code=400, content={"status": "error", "error": "No file loaded"})
-    
+
     rec = processor.get_record(idx)
     if not rec:
         return JSONResponse(status_code=404, content={"status": "error", "error": "Index out of range"})
-        
+
     return {"status": "success", "data": rec}
 
+
 @router.get("/find/{value}")
-async def find_record(value: str, request: Request):
+async def find_record(value: str, request: Request, db: Session = Depends(get_db)):
     """Buscar registro por N° de Registro y devolver su índice"""
-    session_id = request.cookies.get("doccheck_session_id")
-    processor = sessions.get(session_id)
-    
+    processor = _load_processor(request.state.user.id, db)
     if not processor:
         return JSONResponse(status_code=400, content={"status": "error", "error": "No file loaded"})
-    
-    # Buscar en todos los registros
+
     for idx in range(processor.record_count()):
         rec = processor.get_record(idx)
         if rec and str(rec.get("N° Registro", "")) == str(value):
             return {"status": "success", "index": idx}
-    
+
     return {"status": "error", "error": "Record not found"}
 
+
 @router.post("/save/{idx}")
-async def save_record(idx: int, request: Request):
-    session_id = request.cookies.get("doccheck_session_id")
-    processor = sessions.get(session_id)
-    
+async def save_record(idx: int, request: Request, db: Session = Depends(get_db)):
+    user      = request.state.user
+    processor = _load_processor(user.id, db)
     if not processor:
         return JSONResponse(status_code=400, content={"status": "error", "error": "No file loaded"})
-    
+
     try:
-        # Parse form data manually because dynamic fields
         form = await request.form()
         data = {k: v for k, v in form.items()}
-        
-        processor.save_record(idx, data)
+        changed = processor.save_record(idx, data)
+
+        if changed:
+            # Actualizar DB con el workbook modificado
+            rec = db.query(DocCheckFile).filter(DocCheckFile.user_id == user.id).first()
+            filename = rec.filename if rec else "doccheck.xlsx"
+            _persist_processor(user.id, filename, processor, db)
+
         return {"status": "success"}
     except Exception as e:
         return JSONResponse(status_code=500, content={"status": "error", "error": str(e)})
 
+
+@router.get("/last-change")
+async def last_change(request: Request, db: Session = Depends(get_db)):
+    """Devuelve el último cambio registrado en el Historial del archivo del usuario."""
+    processor = _load_processor(request.state.user.id, db)
+    if not processor:
+        return JSONResponse(status_code=400, content={"status": "error", "error": "No file loaded"})
+    change = processor.get_last_change()
+    if not change:
+        return {"status": "empty"}
+    return {"status": "success", "data": change}
+
+
 @router.get("/export/{format_type}")
-async def export_data(format_type: str, request: Request, caja: str = ""):
-    session_id = request.cookies.get("doccheck_session_id")
-    processor = sessions.get(session_id)
-    
+async def export_data(
+    format_type: str,
+    request: Request,
+    caja: str = "",
+    db: Session = Depends(get_db)
+):
+    processor = _load_processor(request.state.user.id, db)
     if not processor:
         raise HTTPException(status_code=400, detail="No file loaded")
-    
+
     try:
         if format_type == "excel":
-            out_name = f"Export_{session_id}.xlsx"
-            processor.export_excel(out_name, caja if caja else None)
-            headers = {'Content-Disposition': 'attachment; filename="Export.xlsx"'}
-            return FileResponse(out_name, headers=headers, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            file_bytes = processor.export_excel_bytes(caja if caja else None)
+            return Response(
+                content=file_bytes,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": 'attachment; filename="Export.xlsx"'}
+            )
         elif format_type == "txt":
-            out_name = f"Export_{session_id}.txt"
-            processor.export_txt(out_name, caja if caja else None)
-            headers = {'Content-Disposition': 'attachment; filename="Export.txt"'}
-            return FileResponse(out_name, headers=headers, media_type="text/plain")
+            file_bytes = processor.export_txt_bytes(caja if caja else None)
+            return Response(
+                content=file_bytes,
+                media_type="text/plain",
+                headers={"Content-Disposition": 'attachment; filename="Export.txt"'}
+            )
         else:
-             raise HTTPException(status_code=400, detail="Invalid format")
+            raise HTTPException(status_code=400, detail="Invalid format")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

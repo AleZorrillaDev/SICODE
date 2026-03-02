@@ -3,11 +3,11 @@
 {% block title %}Consulta de Documentos{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="/static/css/doccheck.css?v=65">
+<link rel="stylesheet" href="/static/css/doccheck.css?v=66">
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/doccheck.js"></script>
+<script src="/static/js/doccheck.js?v=2"></script>
 {% endblock %}
 
 {% block module_title %}
@@ -19,7 +19,25 @@
 {% endblock %}
 
 {% block content %}
-<div class="doc-page">
+
+<!-- Badge: Último cambio (FUERA del .doc-page para que position:fixed funcione) -->
+<div id="last-change-badge" class="last-change-badge" style="display:none;" title="Ver último cambio">
+    <i class="fa-solid fa-clock-rotate-left"></i>
+    <span id="last-change-summary">Sin cambios</span>
+    <div id="last-change-panel" class="last-change-panel">
+        <div class="lcp-header">
+            <i class="fa-solid fa-pen-to-square"></i>
+            Último Cambio
+        </div>
+        <div class="lcp-row"><span class="lcp-label">Registro</span><span id="lcp-registro" class="lcp-value">—</span></div>
+        <div class="lcp-row"><span class="lcp-label">Campo</span><span id="lcp-campo" class="lcp-value">—</span></div>
+        <div class="lcp-row"><span class="lcp-label">Antes</span><span id="lcp-antiguo" class="lcp-value lcp-old">—</span></div>
+        <div class="lcp-row"><span class="lcp-label">Ahora</span><span id="lcp-nuevo" class="lcp-value lcp-new">—</span></div>
+        <div class="lcp-fecha" id="lcp-fecha">—</div>
+    </div>
+</div>
+
+<div class="doc-page" data-record-count="{{ record_count }}">
 
     <!-- Toast Container -->
     <div id="toast-container"></div>
@@ -34,9 +52,6 @@
         </div>
 
         <button class="btn-nav" id="btn-next"><i class="fa-solid fa-arrow-right"></i></button>
-        <div class="progress-indicator" id="progress-indicator" style="display: none;">
-            <span id="current-position">0</span> de <span id="total-records">0</span>
-        </div>
     </div>
 
     <!-- Fila 2: Botones + Campos pill -->

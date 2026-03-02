@@ -21,6 +21,7 @@ from app.modulos.boletin.router import router as boletin_router
 
 # Importar modelos para que SQLAlchemy los detecte al crear la BD
 from app.modulos.auth import models as auth_models
+from app.modulos.doccheck import models as doccheck_models
 from app.core.database import SessionLocal
 from fastapi import Request, Response, status
 from fastapi.responses import RedirectResponse

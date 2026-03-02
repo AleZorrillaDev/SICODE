@@ -1019,3 +1019,114 @@ html {
         font-size: 35px;
     }
 }
+
+/* ===== ÚLTIMO CAMBIO - BADGE FLOTANTE ===== */
+.last-change-badge {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9500;   /* Por encima del header (z-index:100) y modales (z-index:9000) */
+    background: #1e3a5f;
+    color: white;
+    border-radius: 50px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    user-select: none;
+}
+
+.last-change-badge:hover {
+    background: #0163ac;
+    box-shadow: 0 10px 28px rgba(1,99,172,0.35);
+}
+
+.last-change-badge i {
+    font-size: 15px;
+    opacity: 0.85;
+}
+
+/* Panel desplegable al hacer hover */
+.last-change-panel {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 12px);
+    right: 0;
+    width: 300px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    overflow: hidden;
+    animation: scaleIn 0.18s ease-out;
+}
+
+.last-change-badge:hover .last-change-panel {
+    display: block;
+}
+
+.lcp-header {
+    background: #1e3a5f;
+    color: white;
+    padding: 12px 16px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lcp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.lcp-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.lcp-value {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e3a5f;
+    text-align: right;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lcp-old {
+    color: #dc3545;
+    text-decoration: line-through;
+    opacity: 0.75;
+}
+
+.lcp-new {
+    color: #2d8e5f;
+    font-weight: 700;
+}
+
+.lcp-fecha {
+    padding: 8px 16px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    color: #aaa;
+    text-align: right;
+}

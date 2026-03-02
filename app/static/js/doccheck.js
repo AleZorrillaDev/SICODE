@@ -1,6 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let currentIdx = 0;
-    let totalRecords = 0;
+    // Leer el total de registros inyectado por el servidor (sesión persistente)
+    const docPage = document.querySelector(".doc-page");
+    const serverRecordCount = parseInt(docPage?.dataset.recordCount || "0");
+    let totalRecords = serverRecordCount;
+
+    // Restaurar último índice visitado desde localStorage
+    const STORAGE_KEY = "doccheck_last_idx";
+    let currentIdx = totalRecords > 0
+        ? Math.min(parseInt(localStorage.getItem(STORAGE_KEY) || "0"), totalRecords - 1)
+        : 0;
+
     let originalValues = {}; // Para detectar cambios sin guardar
     let hasUnsavedChanges = false;
 
@@ -202,6 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     totalRecords = data.count;
                     showToast("success", `¡Archivo cargado! Total: ${data.count} registros`);
                     currentIdx = 0;
+                    localStorage.setItem(STORAGE_KEY, 0); // Resetear al subir nuevo archivo
                     loadRecord(currentIdx);
                     updateNavButtons();
                     updateProgressIndicator();
@@ -226,6 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (currentIdx > 0) {
                 confirmNavigation(() => {
                     currentIdx--;
+                    localStorage.setItem(STORAGE_KEY, currentIdx);
                     loadRecord(currentIdx);
                     updateNavButtons();
                     updateProgressIndicator();
@@ -239,6 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (currentIdx < totalRecords - 1) {
                 confirmNavigation(() => {
                     currentIdx++;
+                    localStorage.setItem(STORAGE_KEY, currentIdx);
                     loadRecord(currentIdx);
                     updateNavButtons();
                     updateProgressIndicator();
@@ -281,6 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!isNaN(idx) && idx >= 0 && idx < totalRecords) {
                     confirmNavigation(() => {
                         currentIdx = idx;
+                        localStorage.setItem(STORAGE_KEY, currentIdx);
                         loadRecord(currentIdx);
                         updateNavButtons();
                         updateProgressIndicator();
@@ -317,6 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (res.status === "success") {
                 showToast("success", "✓ Registro guardado correctamente");
                 storeOriginalValues();
+                loadLastChange();  // Refrescar el badge
                 return true;
             } else {
                 showToast("error", "Error: " + res.error);
@@ -330,6 +344,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btnSave) {
         btnSave.addEventListener("click", saveCurrentRecord);
+    }
+
+    // ===== ÚLTIMO CAMBIO =====
+    async function loadLastChange() {
+        const badge = document.getElementById("last-change-badge");
+        if (!badge) return;
+
+        try {
+            const resp = await fetch("/doccheck/last-change");
+            const res  = await resp.json();
+
+            if (res.status === "success") {
+                const d = res.data;
+                badge.style.display = "flex";
+                document.getElementById("last-change-summary").textContent =
+                    `${d.campo}: ${(d.nuevo || "(vacío)").substring(0, 22)}`;
+                document.getElementById("lcp-registro").textContent = d.registro || "—";
+                document.getElementById("lcp-campo").textContent    = d.campo    || "—";
+                document.getElementById("lcp-antiguo").textContent  = d.antiguo  || "(vacío)";
+                document.getElementById("lcp-nuevo").textContent    = d.nuevo    || "(vacío)";
+                document.getElementById("lcp-fecha").textContent    = d.fecha    || "—";
+            } else if (res.status === "empty") {
+                // Archivo cargado pero sin cambios aún → mostrar badge vacío
+                badge.style.display = "flex";
+                document.getElementById("last-change-summary").textContent = "Sin cambios aún";
+                document.getElementById("lcp-registro").textContent = "—";
+                document.getElementById("lcp-campo").textContent    = "—";
+                document.getElementById("lcp-antiguo").textContent  = "—";
+                document.getElementById("lcp-nuevo").textContent    = "—";
+                document.getElementById("lcp-fecha").textContent    = "Aún no hay cambios registrados";
+            } else {
+                badge.style.display = "none";
+            }
+        } catch (e) {
+            badge.style.display = "none";
+        }
     }
 
     // ===== CONSULTAR RUC =====
@@ -537,8 +587,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Inicializar
-    loadRecord(0);
+    // Inicializar — si hay archivo, cargar el último registro visitado
+    if (totalRecords > 0) {
+        const progressEl = document.getElementById("progress-indicator");
+        if (progressEl) progressEl.style.display = "flex";
+        loadRecord(currentIdx);  // ← currentIdx ya viene de localStorage
+        loadLastChange();        // ← Mostrar último cambio si existe
+    }
     updateNavButtons();
     updateProgressIndicator();
 });
