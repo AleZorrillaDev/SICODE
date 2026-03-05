@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import datetime
@@ -18,6 +18,9 @@ class User(Base):
     
     role = Column(String, default="Usuario")
     is_active = Column(Boolean, default=True)
+    
+    # Preferencias del usuario
+    app_order = Column(Text, nullable=True)  # JSON: orden personalizado de apps en el inicio
     
     @property
     def full_name(self):

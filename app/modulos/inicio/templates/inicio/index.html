@@ -5,7 +5,164 @@
 <!-- Ocultar flecha de volver en Inicio -->
 {% block back_button %}{% endblock %}
 
+{% block head_extra %}
+<style>
+    /* ============================
+       DRAG & DROP
+       ============================ */
+    .module-card {
+        user-select: none;
+        position: relative;
+        transition: box-shadow 0.25s ease;
+    }
+
+    .module-card.dragging {
+        opacity: 0 !important;
+        pointer-events: none;
+    }
+
+    .module-card.drag-target {
+        box-shadow: 0 0 0 3px var(--primary-blue, #0163ac) !important;
+    }
+
+    .module-card.drag-target::before {
+        content: '\2195  Soltar aquí';
+        position: absolute;
+        inset: 0;
+        background: rgba(1, 99, 172, 0.08);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-main);
+        font-weight: 700;
+        font-size: 12px;
+        color: var(--primary-blue);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        z-index: 5;
+    }
+
+    .module-card.just-dropped {
+        animation: cardLand 0.4s cubic-bezier(.34, 1.56, .64, 1);
+    }
+
+    @keyframes cardLand {
+        0% {
+            transform: scale(0.92);
+            opacity: 0.5;
+        }
+
+        50% {
+            transform: scale(1.04);
+            opacity: 1;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* Toolbar */
+    .drag-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding: 0 2px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .drag-hint {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-body);
+        font-size: 13px;
+        color: var(--text-light-gray, #99a1af);
+    }
+
+    .drag-hint i {
+        color: var(--primary-blue);
+        font-size: 14px;
+    }
+
+    .drag-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .drag-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border: 1.5px solid var(--border-gray, #e5e7eb);
+        border-radius: 8px;
+        background: white;
+        font-family: var(--font-main);
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text-gray);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .drag-btn:hover {
+        border-color: var(--primary-blue-border);
+        color: var(--primary-blue);
+        background: var(--primary-blue-light);
+    }
+
+    .drag-btn.active {
+        background: var(--primary-blue);
+        color: white;
+        border-color: var(--primary-blue);
+    }
+
+    /* Toast */
+    .drag-toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(70px);
+        background: var(--text-dark, #1e2939);
+        color: white;
+        padding: 12px 22px;
+        border-radius: 12px;
+        font-family: var(--font-main);
+        font-weight: 600;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        z-index: 9999;
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(.34, 1.56, .64, 1);
+        pointer-events: none;
+    }
+
+    .drag-toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .drag-toast i {
+        color: #4ade80;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+
+<!-- Toast -->
+<div class="drag-toast" id="dragToast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="dragToastMsg">Orden guardado</span>
+</div>
 
 <!-- CONTENEDOR CENTRALIZADO -->
 <div style="max-width: 1100px; margin: 0 auto; padding-top: 40px; padding-bottom: 60px;">
@@ -21,7 +178,7 @@
         <div style="position: relative; max-width: 600px; margin: 0 auto;">
             <i class="fa-solid fa-search"
                 style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px;"></i>
-            <input type="text" placeholder="Buscar herramienta..."
+            <input type="text" id="searchInput" placeholder="Buscar herramienta..."
                 style="width: 100%; padding: 18px 20px 18px 50px; border-radius: 50px; border: 1px solid #e2e8f0; font-size: 16px; outline: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: 0.2s;"
                 onfocus="this.style.borderColor='var(--primary-blue)'; this.style.boxShadow='0 0 0 4px var(--primary-blue-light)';"
                 onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)';"
@@ -29,152 +186,142 @@
         </div>
     </div>
 
-    <!-- 2. GRID DE APPS UNIFORME -->
+    <!-- TOOLBAR -->
+    <div class="drag-toolbar">
+        <div class="drag-hint">
+            <i class="fa-solid fa-arrows-up-down-left-right"></i>
+            <span>Arrastra las apps para personalizar tu orden</span>
+        </div>
+        <div class="drag-actions">
+            <button class="drag-btn" onclick="resetOrder()">
+                <i class="fa-solid fa-arrow-rotate-left"></i> Resetear
+            </button>
+            <button class="drag-btn" id="btnLock" onclick="toggleLock()">
+                <i class="fa-solid fa-lock-open" id="lockIcon"></i> <span id="lockText">Libre</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. GRID DE APPS -->
     <div class="modules-grid" id="modulesContainer"
         style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
 
-        <!-- App 1: ContriCall (Azul) -->
-        <div class="module-card card-blue" onclick="alert('Abriendo ContriCall...')"
+        <!-- App 1: ContriCall -->
+        <div class="module-card card-blue" draggable="true" data-id="contricall" data-href="#"
             data-name="contricall llamadas telefono callcenter">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-headset"></i>
-                </div>
-                <span class="active-dot" style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"
-                    title="Online"></span>
+                <div class="module-icon-box"><i class="fa-solid fa-headset"></i></div>
+                <span style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;" title="Online"></span>
             </div>
             <h3 class="module-title">ContriCall</h3>
             <p class="module-desc">Gestión de llamadas y atención al contribuyente.</p>
         </div>
 
-        <!-- App 2: DocCheck (Verde) -->
-        <div class="module-card card-green" onclick="location.href='/doccheck'"
+        <!-- App 2: DocCheck -->
+        <div class="module-card card-green" draggable="true" data-id="doccheck" data-href="/doccheck"
             data-name="doccheck verificacion documentos validacion">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-file-circle-check"></i>
-                </div>
-                <span class="active-dot" style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"
-                    title="Online"></span>
+                <div class="module-icon-box"><i class="fa-solid fa-file-circle-check"></i></div>
+                <span style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;" title="Online"></span>
             </div>
             <h3 class="module-title">DocCheck</h3>
             <p class="module-desc">Verificación masiva de documentos SUNAT.</p>
         </div>
 
-        <!-- App 3: Piloto (Rojo) -->
-        <div class="module-card card-red" onclick="window.location.href='/piloto'"
+        <!-- App 3: Piloto -->
+        <div class="module-card card-red" draggable="true" data-id="piloto" data-href="/piloto"
             data-name="piloto fraccionamiento deuda 36">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-rocket"></i>
-                </div>
-                <span class="active-dot" style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"
-                    title="Online"></span>
+                <div class="module-icon-box"><i class="fa-solid fa-rocket"></i></div>
+                <span style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;" title="Online"></span>
             </div>
             <h3 class="module-title">Piloto</h3>
             <p class="module-desc">Sistema piloto de fraccionamiento y deuda.</p>
         </div>
 
-        <!-- App 4: BPSearch (Morado) -->
-        <div class="module-card card-purple" onclick="window.location.href='/bpsearch/'"
+        <!-- App 4: BPSearch -->
+        <div class="module-card card-purple" draggable="true" data-id="bpsearch" data-href="/bpsearch/"
             data-name="bpsearch buscador robot esquelas">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-robot"></i>
-                </div>
+                <div class="module-icon-box"><i class="fa-solid fa-robot"></i></div>
             </div>
             <h3 class="module-title">BPSearch</h3>
             <p class="module-desc">Robot de búsqueda de esquelas y expedientes.</p>
         </div>
 
-        <!-- App 5: AutoDoc (Naranja) -->
-        <div class="module-card card-orange" onclick="window.location.href='/autodoc/'"
+        <!-- App 5: AutoDoc -->
+        <div class="module-card card-orange" draggable="true" data-id="autodoc" data-href="/autodoc/"
             data-name="autodoc generador documentos automatico">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                </div>
+                <div class="module-icon-box"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
             </div>
             <h3 class="module-title">AutoDoc</h3>
             <p class="module-desc">Generación automatizada de reportes y oficios.</p>
         </div>
 
-        <!-- App 6: DataMask (Gris) -->
-        <div class="module-card card-slate" onclick="window.location.href='/datamask/'"
+        <!-- App 6: DataMask -->
+        <div class="module-card card-slate" draggable="true" data-id="datamask" data-href="/datamask/"
             data-name="datamask corrector seguridad datos">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
+                <div class="module-icon-box"><i class="fa-solid fa-shield-halved"></i></div>
             </div>
             <h3 class="module-title">DataMask</h3>
             <p class="module-desc">Corrector y enmascaramiento de datos sensibles.</p>
         </div>
 
-        <!-- App 7: SCADBot (Indigo) -->
-        <div class="module-card card-indigo" onclick="window.location.href='/scadbot/'"
+        <!-- App 7: SCADBot -->
+        <div class="module-card card-indigo" draggable="true" data-id="scadbot" data-href="/scadbot/"
             data-name="scadbot bot automatizacion robot">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-microchip"></i>
-                </div>
+                <div class="module-icon-box"><i class="fa-solid fa-microchip"></i></div>
             </div>
             <h3 class="module-title">SCADBot</h3>
             <p class="module-desc">Automatización de procesos SCAD.</p>
         </div>
 
-        <!-- App 8: Signa (Verde) -->
-        <div class="module-card card-green" onclick="window.location.href='/signa/'"
+        <!-- App 8: Signa -->
+        <div class="module-card card-green" draggable="true" data-id="signa" data-href="/signa/"
             data-name="signa firma digital documentos">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-file-signature"></i>
-                </div>
+                <div class="module-icon-box"><i class="fa-solid fa-file-signature"></i></div>
             </div>
             <h3 class="module-title">Signa</h3>
             <p class="module-desc">Gestión de firmas digitales.</p>
         </div>
 
-        <!-- App 9: ScanDoc (Azul) -->
-        <div class="module-card card-blue" onclick="window.location.href='/scandoc/'"
+        <!-- App 9: ScanDoc -->
+        <div class="module-card card-blue" draggable="true" data-id="scandoc" data-href="/scandoc/"
             data-name="scandoc escaner digitalizacion documentos">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-print"></i>
-                </div>
+                <div class="module-icon-box"><i class="fa-solid fa-print"></i></div>
             </div>
             <h3 class="module-title">ScanDoc</h3>
             <p class="module-desc">Digitalización y clasificación inteligente.</p>
         </div>
 
-        <!-- App 10: Seace (Celeste) -->
-        <div class="module-card card-cyan" onclick="window.location.href='/seace/'"
+        <!-- App 10: Seace -->
+        <div class="module-card card-cyan" draggable="true" data-id="seace" data-href="/seace/"
             data-name="seace contratos osce buscador">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-search-dollar"></i>
-                </div>
+                <div class="module-icon-box"><i class="fa-solid fa-search-dollar"></i></div>
             </div>
             <h3 class="module-title">Seace</h3>
             <p class="module-desc">Consulta masiva de contratos OSCE.</p>
         </div>
 
-        <!-- App 11: Boletín (Rosa/Cereza) -->
-        <div class="module-card card-pink" onclick="window.location.href='/boletin/'"
+        <!-- App 11: Boletín -->
+        <div class="module-card card-pink" draggable="true" data-id="boletin" data-href="/boletin/"
             data-name="boletin el peruano buscador pdf robot">
             <div style="display: flex; align-items: start; justify-content: space-between;">
-                <div class="module-icon-box">
-                    <i class="fa-solid fa-newspaper"></i>
-                </div>
+                <div class="module-icon-box"><i class="fa-solid fa-newspaper"></i></div>
             </div>
             <h3 class="module-title">Boletín</h3>
             <p class="module-desc">Buscador avanzado en el Boletín El Peruano.</p>
         </div>
 
-
     </div>
 
-    <!-- Mensaje No Encontrado -->
+    <!-- No hay resultados -->
     <div id="noResults" style="display: none; text-align: center; margin-top: 60px; color: var(--text-gray);">
         <i class="fa-regular fa-face-frown-open" style="font-size: 40px; margin-bottom: 15px; color: #cbd5e1;"></i>
         <h3 style="font-size: 18px; margin-bottom: 5px;">No encontramos esa aplicación</h3>
@@ -184,32 +331,209 @@
 </div>
 
 <script>
-    function filterModules(query) {
-        const container = document.getElementById('modulesContainer');
-        const cards = container.getElementsByClassName('module-card');
-        const noResults = document.getElementById('noResults');
-        let visibleCount = 0;
+    /* ==============================================================
+       DRAG & DROP — SWAP con persistencia en servidor
+       ============================================================== */
 
+    // Orden del servidor (inyectado por Jinja2)
+    const SERVER_ORDER = {{ app_order| safe }};
+
+    let draggedCard = null;
+    let dropTarget = null;
+    let isLocked = false;
+    let wasDragged = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        restoreOrder();
+        setupDragAndDrop();
+        setupCardClicks();
+    });
+
+    // ——— CLICKS ———
+    function setupCardClicks() {
+        document.querySelectorAll('#modulesContainer .module-card').forEach(card => {
+            card.addEventListener('click', () => {
+                if (wasDragged) { wasDragged = false; return; }
+                const href = card.dataset.href;
+                if (href && href !== '#') window.location.href = href;
+            });
+        });
+    }
+
+    // ——— DRAG & DROP ———
+    function setupDragAndDrop() {
+        const container = document.getElementById('modulesContainer');
+
+        container.addEventListener('dragstart', (e) => {
+            if (isLocked) { e.preventDefault(); return; }
+            const card = e.target.closest('.module-card');
+            if (!card) return;
+
+            draggedCard = card;
+            dropTarget = null;
+            wasDragged = false;
+
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', card.dataset.id);
+
+            requestAnimationFrame(() => card.classList.add('dragging'));
+        });
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!draggedCard) return;
+
+            const target = getCard(e.clientX, e.clientY);
+            clearMark();
+
+            if (target && target !== draggedCard) {
+                target.classList.add('drag-target');
+                dropTarget = target;
+                wasDragged = true;
+            } else {
+                dropTarget = null;
+            }
+        });
+
+        container.addEventListener('dragenter', (e) => e.preventDefault());
+
+        container.addEventListener('dragleave', (e) => {
+            const card = e.target.closest('.module-card');
+            if (card) card.classList.remove('drag-target');
+        });
+
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedCard && dropTarget && draggedCard !== dropTarget) {
+                swapCards(draggedCard, dropTarget);
+                wasDragged = true;
+            }
+        });
+
+        container.addEventListener('dragend', () => {
+            if (!draggedCard) return;
+
+            draggedCard.classList.remove('dragging');
+            clearMark();
+
+            draggedCard.classList.add('just-dropped');
+            setTimeout(() => draggedCard.classList.remove('just-dropped'), 450);
+
+            if (dropTarget) {
+                dropTarget.classList.add('just-dropped');
+                setTimeout(() => dropTarget.classList.remove('just-dropped'), 450);
+            }
+
+            if (wasDragged) {
+                saveOrder();
+                toast('Orden guardado ✓');
+            }
+
+            draggedCard = null;
+            dropTarget = null;
+            setTimeout(() => { wasDragged = false; }, 150);
+        });
+    }
+
+    function swapCards(a, b) {
+        const parent = a.parentNode;
+        const marker = document.createElement('div');
+        marker.style.display = 'none';
+        parent.insertBefore(marker, a);
+        parent.insertBefore(a, b);
+        parent.insertBefore(b, marker);
+        parent.removeChild(marker);
+    }
+
+    function getCard(x, y) {
+        const el = document.elementFromPoint(x, y);
+        return el ? el.closest('.module-card') : null;
+    }
+
+    function clearMark() {
+        document.querySelectorAll('.module-card.drag-target').forEach(c => c.classList.remove('drag-target'));
+    }
+
+    // ——— PERSISTENCIA (servidor) ———
+    function saveOrder() {
+        const ids = Array.from(document.querySelectorAll('#modulesContainer .module-card'))
+            .map(c => c.dataset.id);
+
+        fetch('/api/app-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: ids })
+        }).catch(err => console.warn('Error guardando orden:', err));
+    }
+
+    function restoreOrder() {
+        if (!SERVER_ORDER || !Array.isArray(SERVER_ORDER)) return;
+        const container = document.getElementById('modulesContainer');
+        const map = {};
+        container.querySelectorAll('.module-card').forEach(c => map[c.dataset.id] = c);
+        SERVER_ORDER.forEach(id => { if (map[id]) container.appendChild(map[id]); });
+    }
+
+    function resetOrder() {
+        fetch('/api/app-order', { method: 'DELETE' })
+            .catch(err => console.warn('Error reseteando:', err));
+        toast('Orden restaurado');
+        setTimeout(() => location.reload(), 400);
+    }
+
+    // ——— LOCK ———
+    function toggleLock() {
+        isLocked = !isLocked;
+        const btn = document.getElementById('btnLock');
+        const icon = document.getElementById('lockIcon');
+        const txt = document.getElementById('lockText');
+        const cards = document.querySelectorAll('#modulesContainer .module-card');
+
+        if (isLocked) {
+            btn.classList.add('active');
+            icon.className = 'fa-solid fa-lock';
+            txt.textContent = 'Fijo';
+            cards.forEach(c => c.setAttribute('draggable', 'false'));
+            toast('Orden bloqueado 🔒');
+        } else {
+            btn.classList.remove('active');
+            icon.className = 'fa-solid fa-lock-open';
+            txt.textContent = 'Libre';
+            cards.forEach(c => c.setAttribute('draggable', 'true'));
+            toast('Orden desbloqueado 🔓');
+        }
+    }
+
+    // ——— TOAST ———
+    function toast(msg) {
+        const el = document.getElementById('dragToast');
+        document.getElementById('dragToastMsg').textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    // ——— FILTRAR ———
+    function filterModules(query) {
+        const cards = document.querySelectorAll('#modulesContainer .module-card');
+        const noResults = document.getElementById('noResults');
+        let visible = 0;
         query = query.toLowerCase();
 
-        for (let card of cards) {
-            // Buscamos en el atributo data-name (keywords) y en el contenido visible
-            const keywords = card.getAttribute('data-name').toLowerCase();
+        cards.forEach(card => {
+            const kw = card.dataset.name.toLowerCase();
             const title = card.querySelector('.module-title').innerText.toLowerCase();
             const desc = card.querySelector('.module-desc').innerText.toLowerCase();
 
-            if (keywords.includes(query) || title.includes(query) || desc.includes(query)) {
-                card.style.display = "flex";
-                // Animación simple de entrada
-                card.style.opacity = "1";
-                card.style.transform = "scale(1)";
-                visibleCount++;
+            if (kw.includes(query) || title.includes(query) || desc.includes(query)) {
+                card.style.display = 'flex';
+                visible++;
             } else {
-                card.style.display = "none";
+                card.style.display = 'none';
             }
-        }
+        });
 
-        noResults.style.display = visibleCount === 0 ? "block" : "none";
+        noResults.style.display = visible === 0 ? 'block' : 'none';
     }
 </script>
 

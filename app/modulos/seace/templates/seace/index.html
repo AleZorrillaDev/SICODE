@@ -1,111 +1,208 @@
 {% extends "base.html" %}
 
-{% block title %}Seace - Consulta de Contratos{% endblock %}
+{% block title %}SEACE - Inteligencia de Contrataciones{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="/static/css/seace.css" />
-<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="/static/css/seace.css?v=10" />
 {% endblock %}
 
 {% block module_title %}
 <div class="module-header-title">
-    <span class="module-name">Seace</span>
+    <span class="module-name">SEACE</span>
     <span class="separator">|</span>
     <span class="module-desc">Inteligencia de Contrataciones</span>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="seace-wrapper">
-    <div class="seace-toolbar">
-        <div class="header-left">
-            <h1>Consulta Masiva de Contratos</h1>
-            <p>Inteligencia de Contrataciones - Portal SEACE (OSCE)</p>
+<div class="sc-page">
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- ===== LAYOUT PRINCIPAL: 2 columnas ===== -->
+    <div class="sc-grid">
+
+        <!-- ==========================================
+             COLUMNA IZQUIERDA — Configuración
+             ========================================== -->
+        <div class="sc-sidebar">
+
+            <!-- Card: Modo de operación -->
+            <div class="sc-card">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-sliders"></i>
+                    <h3>MODO DE OPERACIÓN</h3>
+                </div>
+                <div class="sc-mode-tabs">
+                    <button class="sc-tab active" id="tab-consulta" onclick="setMode('consulta')">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Consulta RUCs
+                    </button>
+                    <button class="sc-tab" id="tab-cruce" onclick="setMode('cruce')">
+                        <i class="fa-solid fa-code-merge"></i>
+                        Cruce Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card: Parámetros -->
+            <div class="sc-card">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-gear"></i>
+                    <h3>PARÁMETROS</h3>
+                </div>
+
+                <!-- Fecha -->
+                <div class="sc-field">
+                    <div class="sc-field-label">
+                        <i class="fa-solid fa-calendar-day"></i>
+                        FECHA VIGENCIA DESDE
+                    </div>
+                    <input type="date" class="sc-input" id="startDate" value="2025-12-01">
+                </div>
+
+                <!-- ===== MODO CONSULTA: RUCs ===== -->
+                <div id="panel-consulta">
+                    <div class="sc-field">
+                        <div class="sc-field-label">
+                            <i class="fa-solid fa-list-ol"></i>
+                            RUCs DE PROVEEDORES
+                        </div>
+                        <textarea id="rucsTextarea" class="sc-textarea"
+                            placeholder="Uno por línea:&#10;20100000001&#10;20200000002&#10;20300000003"></textarea>
+                    </div>
+
+                    <div class="sc-field">
+                        <div class="sc-field-label">
+                            <i class="fa-solid fa-file-arrow-up"></i>
+                            Ó CARGAR ARCHIVO
+                        </div>
+                        <div class="sc-dropzone" id="dropzone-rucs"
+                            onclick="document.getElementById('fileInputRucs').click()">
+                            <i class="fa-solid fa-cloud-arrow-up sc-dropzone-icon"></i>
+                            <span class="sc-dropzone-text" id="labelFileRucs">Arrastra o haz clic — Excel / TXT</span>
+                            <input type="file" id="fileInputRucs" accept=".txt,.xlsx,.xls" hidden
+                                onchange="onFileRucsChange()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== MODO CRUCE: Excel base ===== -->
+                <div id="panel-cruce" style="display:none;">
+                    <div class="sc-field">
+                        <div class="sc-field-label">
+                            <i class="fa-solid fa-file-excel"></i>
+                            ARCHIVO EXCEL BASE
+                        </div>
+                        <div class="sc-dropzone" id="dropzone-cruce"
+                            onclick="document.getElementById('fileInputCruce').click()">
+                            <i class="fa-solid fa-cloud-arrow-up sc-dropzone-icon"></i>
+                            <span class="sc-dropzone-text" id="labelFileCruce">Excel con columna de RUCs para
+                                cruce</span>
+                            <input type="file" id="fileInputCruce" accept=".xlsx,.xls" hidden
+                                onchange="onFileCruceChange()">
+                        </div>
+                    </div>
+
+                    <div class="sc-field">
+                        <div class="sc-field-label">
+                            <i class="fa-solid fa-table-columns"></i>
+                            NOMBRE COLUMNA RUC
+                        </div>
+                        <input type="text" class="sc-input" id="colRuc" placeholder="Ej: RUC (auto-detecta si vacío)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="sc-actions">
+                <button class="sc-btn sc-btn-primary" id="btnProcess" onclick="startProcess()">
+                    <i class="fa-solid fa-play"></i>
+                    <span id="btnProcessLabel">Iniciar Procesamiento</span>
+                </button>
+                <button class="sc-btn sc-btn-secondary" onclick="clearAll()">
+                    <i class="fa-solid fa-broom"></i>
+                    Limpiar Todo
+                </button>
+            </div>
+
         </div>
-        <div class="header-actions">
-           <button class="btn-process" style="background: var(--primary-alt);" onclick="clearAll()">
-                <i data-lucide="trash-2" width="16"></i> Limpiar
-           </button>
-        </div>
-    </div>
 
-    <div class="seace-main-grid">
-        <!-- Sidebar Panel -->
-        <div class="sidebar-panel">
-            <div class="section-title">
-                <i data-lucide="settings-2" width="18"></i> Parámetros de Búsqueda
-            </div>
+        <!-- ==========================================
+             COLUMNA DERECHA — Resultados
+             ========================================== -->
+        <div class="sc-content">
 
-            <div class="form-group">
-                <label>RUCs de Proveedores (uno por línea)</label>
-                <textarea id="rucsInput" class="seace-textarea" placeholder="Ejemplo:&#10;20100000001&#10;20200000002"></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>O cargar archivo (Excel / TXT)</label>
-                <div class="file-input-wrapper">
-                    <i data-lucide="upload-cloud" width="24" style="color: #94a3b8; margin-bottom: 8px;"></i>
-                    <div class="file-info" id="fileStatus">Seleccionar archivo...</div>
-                    <input type="file" id="fileInput" accept=".txt,.xlsx,.xls" onchange="updateFileInfo()" />
+            <!-- Card: Progreso -->
+            <div class="sc-card sc-progress-card" id="progressCard" style="display:none;">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-microchip"></i>
+                    <h3>PROCESANDO</h3>
+                    <span class="sc-pct" id="progressPercent">0%</span>
                 </div>
-            </div>
-
-            <div class="form-group">
-                <label>Fecha de Inicio (Vigencia)</label>
-                <input type="date" id="startDate" class="seace-textarea" style="min-height: auto; padding: 10px;" value="2025-12-01">
-            </div>
-
-            <button id="btnProcess" class="btn-process" onclick="startProcess()">
-                <i data-lucide="play" width="18"></i> Iniciar Procesamiento
-            </button>
-        </div>
-
-        <!-- Content Panel -->
-        <div class="content-panel">
-            <!-- Progress Card -->
-            <div id="progressCard" class="progress-card">
-                <div class="progress-header">
-                    <span class="progress-text" id="progressText">Procesando solicitudes...</span>
-                    <span class="progress-percent" id="progressPercent">0%</span>
+                <div class="sc-progress-bar">
+                    <div class="sc-progress-fill" id="progressFill"></div>
                 </div>
-                <div class="progress-bar-bg">
-                    <div id="progressFill" class="progress-bar-fill"></div>
+                <div class="sc-progress-detail" id="progressText">Consultando API de SEACE...</div>
+            </div>
+
+            <!-- Card: Resumen -->
+            <div class="sc-summary-row" id="summaryRow" style="display:none;">
+                <div class="sc-stat sc-stat-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <div class="sc-stat-data">
+                        <span class="sc-stat-val" id="countSuccess">0</span>
+                        <span class="sc-stat-label">Exitosos</span>
+                    </div>
+                </div>
+                <div class="sc-stat sc-stat-error">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <div class="sc-stat-data">
+                        <span class="sc-stat-val" id="countFailed">0</span>
+                        <span class="sc-stat-label">Fallidos</span>
+                    </div>
+                </div>
+                <div class="sc-stat sc-stat-info">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <div class="sc-stat-data">
+                        <span class="sc-stat-val" id="countTotal">0</span>
+                        <span class="sc-stat-label">Contratos</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Summary Bar -->
-            <div id="summaryGrid" class="summary-grid" style="display: none;">
-                <div class="summary-box success">
-                    <span class="summary-label">Exitosos</span>
-                    <span class="summary-value" id="countSuccess">0</span>
-                </div>
-                <div class="summary-box error">
-                    <span class="summary-label">Fallidos</span>
-                    <span class="summary-value" id="countFailed">0</span>
-                </div>
-            </div>
-
-            <!-- Results List Card -->
-            <div class="results-card">
-                <div class="section-title">
-                    <i data-lucide="list" width="18"></i> Detalle por RUC
-                </div>
-                
-                <div id="emptyState" class="empty-state">
-                    <i data-lucide="search" size="48"></i>
-                    <p>Los resultados del procesamiento aparecerán aquí.</p>
+            <!-- Card: Resultados -->
+            <div class="sc-card sc-results-card">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-list-check"></i>
+                    <h3>RESULTADOS</h3>
+                    <div class="sc-badge" id="resultsBadge" style="display:none;">0</div>
                 </div>
 
-                <div id="resultsList" class="results-list" style="display: none;">
-                    <!-- Items mapped here -->
+                <!-- Empty State -->
+                <div id="emptyState" class="sc-empty">
+                    <div class="sc-empty-icon">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <h4>Sin resultados aún</h4>
+                    <p>Configura los parámetros en el panel izquierdo e inicia el procesamiento.</p>
                 </div>
 
-                <div id="downloadArea" style="display: none; margin-top: auto; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
-                    <a id="downloadBtn" href="#" class="btn-process" style="background: var(--success-green); text-decoration: none;">
-                        <i data-lucide="download" width="18"></i> Descargar Reporte Excel
+                <!-- Lista de resultados -->
+                <div id="resultsList" class="sc-results-list" style="display:none;">
+                    <!-- JS genera contenido aquí -->
+                </div>
+
+                <!-- Descarga -->
+                <div id="downloadArea" class="sc-download-area" style="display:none;">
+                    <a id="downloadBtn" href="#" class="sc-btn sc-btn-download">
+                        <i class="fa-solid fa-file-excel"></i>
+                        Descargar Reporte Excel
                     </a>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -113,163 +210,246 @@
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        lucide.createIcons();
-    });
+    /* ============================================================
+       MODO
+       ============================================================ */
+    let currentMode = 'consulta';
 
-    function updateFileInfo() {
-        const fileInput = document.getElementById('fileInput');
-        const fileStatus = document.getElementById('fileStatus');
-        if (fileInput.files.length > 0) {
-            fileStatus.innerHTML = `<strong>${fileInput.files[0].name}</strong> seleccionada`;
-            fileStatus.style.color = 'var(--primary-blue)';
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('tab-consulta').classList.toggle('active', mode === 'consulta');
+        document.getElementById('tab-cruce').classList.toggle('active', mode === 'cruce');
+        document.getElementById('panel-consulta').style.display = mode === 'consulta' ? 'block' : 'none';
+        document.getElementById('panel-cruce').style.display = mode === 'cruce' ? 'block' : 'none';
+        resetResults();
+    }
+
+    /* ============================================================
+       ARCHIVOS
+       ============================================================ */
+    function onFileRucsChange() {
+        const f = document.getElementById('fileInputRucs').files[0];
+        const label = document.getElementById('labelFileRucs');
+        const zone = document.getElementById('dropzone-rucs');
+        if (f) {
+            label.textContent = f.name;
+            zone.classList.add('has-file');
+        } else {
+            label.textContent = 'Arrastra o haz clic — Excel / TXT';
+            zone.classList.remove('has-file');
         }
     }
 
+    function onFileCruceChange() {
+        const f = document.getElementById('fileInputCruce').files[0];
+        const label = document.getElementById('labelFileCruce');
+        const zone = document.getElementById('dropzone-cruce');
+        if (f) {
+            label.textContent = f.name;
+            zone.classList.add('has-file');
+        } else {
+            label.textContent = 'Excel con columna de RUCs para cruce';
+            zone.classList.remove('has-file');
+        }
+    }
+
+    /* ============================================================
+       LIMPIAR
+       ============================================================ */
     function clearAll() {
-        document.getElementById('rucsInput').value = '';
-        document.getElementById('fileInput').value = '';
-        document.getElementById('fileStatus').innerText = 'Seleccionar archivo...';
-        document.getElementById('fileStatus').style.color = '#64748b';
-        document.getElementById('summaryGrid').style.display = 'none';
+        document.getElementById('rucsTextarea').value = '';
+        document.getElementById('fileInputRucs').value = '';
+        document.getElementById('fileInputCruce').value = '';
+        document.getElementById('labelFileRucs').textContent = 'Arrastra o haz clic — Excel / TXT';
+        document.getElementById('dropzone-rucs').classList.remove('has-file');
+        document.getElementById('labelFileCruce').textContent = 'Excel con columna de RUCs para cruce';
+        document.getElementById('dropzone-cruce').classList.remove('has-file');
+        document.getElementById('colRuc').value = '';
+        resetResults();
+        showToast('Se limpiaron todos los campos.', 'info');
+    }
+
+    function resetResults() {
+        document.getElementById('summaryRow').style.display = 'none';
         document.getElementById('resultsList').style.display = 'none';
         document.getElementById('downloadArea').style.display = 'none';
         document.getElementById('emptyState').style.display = 'flex';
         document.getElementById('progressCard').style.display = 'none';
+        document.getElementById('resultsBadge').style.display = 'none';
     }
 
+    /* ============================================================
+       PROCESAR
+       ============================================================ */
     async function startProcess() {
-        const rucsText = document.getElementById('rucsInput').value.trim();
-        const fileInput = document.getElementById('fileInput');
-        const startDate = document.getElementById('startDate').value;
         const btn = document.getElementById('btnProcess');
-        
-        const progressCard = document.getElementById('progressCard');
-        const progressFill = document.getElementById('progressFill');
-        const progressPercent = document.getElementById('progressPercent');
-        
-        const summaryGrid = document.getElementById('summaryGrid');
-        const emptyState = document.getElementById('emptyState');
-        const resultsList = document.getElementById('resultsList');
-        const downloadArea = document.getElementById('downloadArea');
+        const label = document.getElementById('btnProcessLabel');
 
-        if (!rucsText && fileInput.files.length === 0) {
-            alert("Por favor ingrese RUCs o seleccione un archivo.");
+        // Recoger data
+        let rucsText = '';
+        if (currentMode === 'consulta') {
+            rucsText = document.getElementById('rucsTextarea').value.trim();
+        }
+        const fileRucs = document.getElementById('fileInputRucs').files[0];
+        const fileCruce = document.getElementById('fileInputCruce').files[0];
+        const startDate = document.getElementById('startDate').value;
+
+        // Validaciones
+        if (currentMode === 'consulta' && !rucsText && !fileRucs) {
+            showToast('Ingrese RUCs o seleccione un archivo.', 'warning');
+            return;
+        }
+        if (currentMode === 'cruce' && !fileCruce) {
+            showToast('Seleccione un archivo Excel base para el cruce.', 'warning');
             return;
         }
 
-        // UI Reset
+        // UI: Loading
         btn.disabled = true;
-        btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Procesando...`;
-        lucide.createIcons();
-        
-        progressCard.style.display = 'block';
-        progressFill.style.width = '10%';
-        progressPercent.innerText = '10%';
-        
-        summaryGrid.style.display = 'none';
-        emptyState.style.display = 'none';
-        resultsList.style.display = 'none';
-        downloadArea.style.display = 'none';
+        label.textContent = 'Procesando...';
+        btn.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
 
-        // Prepare Data
-        const formData = new FormData();
-        if (rucsText) formData.append('rucs', rucsText);
-        if (fileInput.files.length > 0) formData.append('file', fileInput.files[0]);
-        formData.append('start_date', startDate);
+        document.getElementById('progressCard').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('summaryRow').style.display = 'none';
+        document.getElementById('resultsList').style.display = 'none';
+        document.getElementById('downloadArea').style.display = 'none';
+
+        const fill = document.getElementById('progressFill');
+        const pct = document.getElementById('progressPercent');
+        fill.style.width = '5%';
+        pct.textContent = '5%';
+
+        let p = 5;
+        const interval = setInterval(() => {
+            if (p < 88) {
+                p += Math.random() * 4;
+                fill.style.width = Math.round(p) + '%';
+                pct.textContent = Math.round(p) + '%';
+            }
+        }, 350);
+
+        // FormData
+        const fd = new FormData();
+        if (currentMode === 'consulta') {
+            if (rucsText) fd.append('rucs', rucsText);
+            if (fileRucs) fd.append('file', fileRucs);
+        } else {
+            if (fileCruce) fd.append('file', fileCruce);
+            const col = document.getElementById('colRuc').value.trim();
+            if (col) fd.append('col_ruc', col);
+        }
+        fd.append('start_date', startDate);
 
         try {
-            // Fake progress interval while waiting for response
-            let p = 10;
-            const interval = setInterval(() => {
-                if (p < 90) {
-                    p += 2;
-                    progressFill.style.width = p + '%';
-                    progressPercent.innerText = p + '%';
-                }
-            }, 300);
-
-            const response = await fetch('/seace/process', {
-                method: 'POST',
-                body: formData
-            });
-
+            const res = await fetch('/seace/process', { method: 'POST', body: fd });
             clearInterval(interval);
-            progressFill.style.width = '100%';
-            progressPercent.innerText = '100%';
+            fill.style.width = '100%';
+            pct.textContent = '100%';
 
-            if (!response.ok) throw new Error("Error en el servidor");
+            const data = await res.json();
+            if (!res.ok || data.status === 'error') throw new Error(data.message || 'Error en el servidor');
 
-            const data = await response.json();
+            setTimeout(() => {
+                document.getElementById('progressCard').style.display = 'none';
+                renderResults(data);
+            }, 500);
 
-            if (data.status === 'success') {
-                // Update Summary
-                document.getElementById('countSuccess').innerText = data.success_count;
-                document.getElementById('countFailed').innerText = data.failed_count;
-                summaryGrid.style.display = 'grid';
-
-                // Update List
-                resultsList.innerHTML = '';
-                
-                // 1. Success Summary Card (Verde - Siempre arriba si hay éxitos)
-                if (data.success_count > 0) {
-                    const successText = data.success_count === 1 
-                        ? "1 RUC procesado exitosamente" 
-                        : `${data.success_count} RUCs procesados exitosamente`;
-                        
-                    resultsList.innerHTML += `
-                        <div class="result-item" style="background: #f0fdf4; border-left: 5px solid #22c55e; margin-bottom: 15px; flex-direction: column; align-items: flex-start; padding: 15px;">
-                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                                <i data-lucide="check-circle" style="color: #22c55e;"></i>
-                                <span class="result-ruc" style="color: #166534;">Lote de Procesamiento</span>
-                                <span class="result-status status-valid">${successText}</span>
-                            </div>
-                            <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; width: 100%;">
-                                ${(data.success_rucs || []).map(ruc => `<span title="Procesado OK" style="background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid #bbf7d0;">${ruc}</span>`).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // 2. Failed RUCs (Rojo - Individuales para revisión)
-                if (data.failed_count > 0) {
-                    const errorHeader = document.createElement('div');
-                    errorHeader.className = 'section-title';
-                    errorHeader.style.fontSize = '14px';
-                    errorHeader.style.marginTop = '10px';
-                    errorHeader.style.marginBottom = '10px';
-                    errorHeader.style.color = '#ef4444';
-                    errorHeader.innerHTML = `<i data-lucide="alert-circle" width="16"></i> RUCs con inconvenientes (${data.failed_count})`;
-                    resultsList.appendChild(errorHeader);
-
-                    data.failed_rucs.forEach(item => {
-                        resultsList.innerHTML += `
-                            <div class="result-item" style="border-left: 5px solid #ef4444; margin-bottom: 8px; padding: 10px 15px;">
-                                <span class="result-ruc" style="font-weight: 600;">${item.ruc}</span>
-                                <span class="result-status status-invalid">${item.reason}</span>
-                            </div>
-                        `;
-                    });
-                }
-
-                resultsList.style.display = 'flex';
-                downloadArea.style.display = 'block';
-                document.getElementById('downloadBtn').href = data.download_url;
-                
-            } else {
-                alert("Error: " + data.message);
-                emptyState.style.display = 'flex';
-            }
-
-        } catch (error) {
-            alert("Error crítico: " + error.message);
-            emptyState.style.display = 'flex';
+        } catch (err) {
+            clearInterval(interval);
+            document.getElementById('progressCard').style.display = 'none';
+            showToast(err.message, 'error');
+            document.getElementById('emptyState').style.display = 'flex';
         } finally {
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="play" width="18"></i> Iniciar Procesamiento`;
-            progressCard.style.display = 'none';
-            lucide.createIcons();
+            label.textContent = 'Iniciar Procesamiento';
+            btn.querySelector('i').className = 'fa-solid fa-play';
         }
+    }
+
+    /* ============================================================
+       RENDER RESULTADOS
+       ============================================================ */
+    function renderResults(data) {
+        // Stats
+        document.getElementById('countSuccess').textContent = data.success_count || 0;
+        document.getElementById('countFailed').textContent = data.failed_count || 0;
+        document.getElementById('countTotal').textContent = data.count || 0;
+        document.getElementById('summaryRow').style.display = 'flex';
+
+        // Badge
+        const badge = document.getElementById('resultsBadge');
+        badge.textContent = data.count || 0;
+        badge.style.display = 'flex';
+
+        const list = document.getElementById('resultsList');
+        list.innerHTML = '';
+
+        // Éxitos
+        if (data.success_count > 0) {
+            list.innerHTML += `
+                <div class="sc-result-block sc-block-ok">
+                    <div class="sc-block-head">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>${data.success_count} RUC${data.success_count > 1 ? 's' : ''} procesado${data.success_count > 1 ? 's' : ''} exitosamente</span>
+                    </div>
+                    <div class="sc-tags">
+                        ${(data.success_rucs || []).map(r => `<span class="sc-tag sc-tag-ok">${r}</span>`).join('')}
+                    </div>
+                </div>`;
+        }
+
+        // Errores
+        if (data.failed_count > 0) {
+            let rows = (data.failed_rucs || []).map(item => `
+                <div class="sc-fail-row">
+                    <span class="sc-tag sc-tag-err">${item.ruc}</span>
+                    <span class="sc-fail-reason">${item.reason}</span>
+                </div>`).join('');
+
+            list.innerHTML += `
+                <div class="sc-result-block sc-block-err">
+                    <div class="sc-block-head">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>RUCs con inconvenientes (${data.failed_count})</span>
+                    </div>
+                    <div class="sc-fail-list">${rows}</div>
+                </div>`;
+        }
+
+        list.style.display = 'flex';
+
+        // Descarga
+        if (data.download_url) {
+            document.getElementById('downloadBtn').href = data.download_url;
+            document.getElementById('downloadArea').style.display = 'flex';
+        }
+
+        showToast(`Listo — ${data.count || 0} contratos encontrados.`, 'success');
+    }
+
+    /* ============================================================
+       TOAST NOTIFICATIONS
+       ============================================================ */
+    function showToast(message, type = 'info') {
+        const icons = {
+            success: 'fa-circle-check',
+            error: 'fa-circle-xmark',
+            warning: 'fa-triangle-exclamation',
+            info: 'fa-circle-info'
+        };
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <i class="fa-solid ${icons[type] || icons.info} toast-icon"></i>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('toast-exit');
+            setTimeout(() => toast.remove(), 350);
+        }, 4500);
     }
 </script>
 {% endblock %}
