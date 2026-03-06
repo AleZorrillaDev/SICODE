@@ -44,24 +44,13 @@
     }
 
     .module-card.just-dropped {
-        animation: cardLand 0.4s cubic-bezier(.34, 1.56, .64, 1);
+        animation: cardLand 0.4s cubic-bezier(.34,1.56,.64,1);
     }
 
     @keyframes cardLand {
-        0% {
-            transform: scale(0.92);
-            opacity: 0.5;
-        }
-
-        50% {
-            transform: scale(1.04);
-            opacity: 1;
-        }
-
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
+        0%   { transform: scale(0.92); opacity: 0.5; }
+        50%  { transform: scale(1.04); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
     }
 
     /* Toolbar */
@@ -84,15 +73,8 @@
         color: var(--text-light-gray, #99a1af);
     }
 
-    .drag-hint i {
-        color: var(--primary-blue);
-        font-size: 14px;
-    }
-
-    .drag-actions {
-        display: flex;
-        gap: 8px;
-    }
+    .drag-hint i { color: var(--primary-blue); font-size: 14px; }
+    .drag-actions { display: flex; gap: 8px; }
 
     .drag-btn {
         display: flex;
@@ -138,10 +120,10 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         z-index: 9999;
         opacity: 0;
-        transition: all 0.3s cubic-bezier(.34, 1.56, .64, 1);
+        transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
         pointer-events: none;
     }
 
@@ -150,9 +132,7 @@
         transform: translateX(-50%) translateY(0);
     }
 
-    .drag-toast i {
-        color: #4ade80;
-    }
+    .drag-toast i { color: #4ade80; }
 </style>
 {% endblock %}
 
@@ -172,8 +152,7 @@
         <h1 style="font-family: var(--font-main); color: var(--text-dark); margin-bottom: 10px; font-size: 32px;">
             Hub de Aplicaciones
         </h1>
-        <p style="color: var(--text-gray); margin-bottom: 30px;">Accede a todas tus herramientas y sistemas desde un
-            solo lugar.</p>
+        <p style="color: var(--text-gray); margin-bottom: 30px;">Accede a todas tus herramientas y sistemas desde un solo lugar.</p>
 
         <div style="position: relative; max-width: 600px; margin: 0 auto;">
             <i class="fa-solid fa-search"
@@ -331,210 +310,210 @@
 </div>
 
 <script>
-    /* ==============================================================
-       DRAG & DROP — SWAP con persistencia en servidor
-       ============================================================== */
+/* ==============================================================
+   DRAG & DROP — SWAP con persistencia en servidor
+   ============================================================== */
 
-    // Orden del servidor (inyectado por Jinja2)
-    const SERVER_ORDER = {{ app_order| safe }};
+// Orden del servidor (inyectado por Jinja2)
+const SERVER_ORDER = JSON.parse('{{ app_order|safe }}');
 
-    let draggedCard = null;
-    let dropTarget = null;
-    let isLocked = false;
-    let wasDragged = false;
+let draggedCard = null;
+let dropTarget = null;
+let isLocked = false;
+let wasDragged = false;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        restoreOrder();
-        setupDragAndDrop();
-        setupCardClicks();
+document.addEventListener('DOMContentLoaded', () => {
+    restoreOrder();
+    setupDragAndDrop();
+    setupCardClicks();
+});
+
+// ——— CLICKS ———
+function setupCardClicks() {
+    document.querySelectorAll('#modulesContainer .module-card').forEach(card => {
+        card.addEventListener('click', () => {
+            if (wasDragged) { wasDragged = false; return; }
+            const href = card.dataset.href;
+            if (href && href !== '#') window.location.href = href;
+        });
+    });
+}
+
+// ——— DRAG & DROP ———
+function setupDragAndDrop() {
+    const container = document.getElementById('modulesContainer');
+
+    container.addEventListener('dragstart', (e) => {
+        if (isLocked) { e.preventDefault(); return; }
+        const card = e.target.closest('.module-card');
+        if (!card) return;
+
+        draggedCard = card;
+        dropTarget = null;
+        wasDragged = false;
+
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+
+        requestAnimationFrame(() => card.classList.add('dragging'));
     });
 
-    // ——— CLICKS ———
-    function setupCardClicks() {
-        document.querySelectorAll('#modulesContainer .module-card').forEach(card => {
-            card.addEventListener('click', () => {
-                if (wasDragged) { wasDragged = false; return; }
-                const href = card.dataset.href;
-                if (href && href !== '#') window.location.href = href;
-            });
-        });
-    }
+    container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (!draggedCard) return;
 
-    // ——— DRAG & DROP ———
-    function setupDragAndDrop() {
-        const container = document.getElementById('modulesContainer');
+        const target = getCard(e.clientX, e.clientY);
+        clearMark();
 
-        container.addEventListener('dragstart', (e) => {
-            if (isLocked) { e.preventDefault(); return; }
-            const card = e.target.closest('.module-card');
-            if (!card) return;
-
-            draggedCard = card;
-            dropTarget = null;
-            wasDragged = false;
-
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', card.dataset.id);
-
-            requestAnimationFrame(() => card.classList.add('dragging'));
-        });
-
-        container.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            if (!draggedCard) return;
-
-            const target = getCard(e.clientX, e.clientY);
-            clearMark();
-
-            if (target && target !== draggedCard) {
-                target.classList.add('drag-target');
-                dropTarget = target;
-                wasDragged = true;
-            } else {
-                dropTarget = null;
-            }
-        });
-
-        container.addEventListener('dragenter', (e) => e.preventDefault());
-
-        container.addEventListener('dragleave', (e) => {
-            const card = e.target.closest('.module-card');
-            if (card) card.classList.remove('drag-target');
-        });
-
-        container.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (draggedCard && dropTarget && draggedCard !== dropTarget) {
-                swapCards(draggedCard, dropTarget);
-                wasDragged = true;
-            }
-        });
-
-        container.addEventListener('dragend', () => {
-            if (!draggedCard) return;
-
-            draggedCard.classList.remove('dragging');
-            clearMark();
-
-            draggedCard.classList.add('just-dropped');
-            setTimeout(() => draggedCard.classList.remove('just-dropped'), 450);
-
-            if (dropTarget) {
-                dropTarget.classList.add('just-dropped');
-                setTimeout(() => dropTarget.classList.remove('just-dropped'), 450);
-            }
-
-            if (wasDragged) {
-                saveOrder();
-                toast('Orden guardado ✓');
-            }
-
-            draggedCard = null;
-            dropTarget = null;
-            setTimeout(() => { wasDragged = false; }, 150);
-        });
-    }
-
-    function swapCards(a, b) {
-        const parent = a.parentNode;
-        const marker = document.createElement('div');
-        marker.style.display = 'none';
-        parent.insertBefore(marker, a);
-        parent.insertBefore(a, b);
-        parent.insertBefore(b, marker);
-        parent.removeChild(marker);
-    }
-
-    function getCard(x, y) {
-        const el = document.elementFromPoint(x, y);
-        return el ? el.closest('.module-card') : null;
-    }
-
-    function clearMark() {
-        document.querySelectorAll('.module-card.drag-target').forEach(c => c.classList.remove('drag-target'));
-    }
-
-    // ——— PERSISTENCIA (servidor) ———
-    function saveOrder() {
-        const ids = Array.from(document.querySelectorAll('#modulesContainer .module-card'))
-            .map(c => c.dataset.id);
-
-        fetch('/api/app-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order: ids })
-        }).catch(err => console.warn('Error guardando orden:', err));
-    }
-
-    function restoreOrder() {
-        if (!SERVER_ORDER || !Array.isArray(SERVER_ORDER)) return;
-        const container = document.getElementById('modulesContainer');
-        const map = {};
-        container.querySelectorAll('.module-card').forEach(c => map[c.dataset.id] = c);
-        SERVER_ORDER.forEach(id => { if (map[id]) container.appendChild(map[id]); });
-    }
-
-    function resetOrder() {
-        fetch('/api/app-order', { method: 'DELETE' })
-            .catch(err => console.warn('Error reseteando:', err));
-        toast('Orden restaurado');
-        setTimeout(() => location.reload(), 400);
-    }
-
-    // ——— LOCK ———
-    function toggleLock() {
-        isLocked = !isLocked;
-        const btn = document.getElementById('btnLock');
-        const icon = document.getElementById('lockIcon');
-        const txt = document.getElementById('lockText');
-        const cards = document.querySelectorAll('#modulesContainer .module-card');
-
-        if (isLocked) {
-            btn.classList.add('active');
-            icon.className = 'fa-solid fa-lock';
-            txt.textContent = 'Fijo';
-            cards.forEach(c => c.setAttribute('draggable', 'false'));
-            toast('Orden bloqueado 🔒');
+        if (target && target !== draggedCard) {
+            target.classList.add('drag-target');
+            dropTarget = target;
+            wasDragged = true;
         } else {
-            btn.classList.remove('active');
-            icon.className = 'fa-solid fa-lock-open';
-            txt.textContent = 'Libre';
-            cards.forEach(c => c.setAttribute('draggable', 'true'));
-            toast('Orden desbloqueado 🔓');
+            dropTarget = null;
         }
+    });
+
+    container.addEventListener('dragenter', (e) => e.preventDefault());
+
+    container.addEventListener('dragleave', (e) => {
+        const card = e.target.closest('.module-card');
+        if (card) card.classList.remove('drag-target');
+    });
+
+    container.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (draggedCard && dropTarget && draggedCard !== dropTarget) {
+            swapCards(draggedCard, dropTarget);
+            wasDragged = true;
+        }
+    });
+
+    container.addEventListener('dragend', () => {
+        if (!draggedCard) return;
+
+        draggedCard.classList.remove('dragging');
+        clearMark();
+
+        draggedCard.classList.add('just-dropped');
+        setTimeout(() => draggedCard.classList.remove('just-dropped'), 450);
+
+        if (dropTarget) {
+            dropTarget.classList.add('just-dropped');
+            setTimeout(() => dropTarget.classList.remove('just-dropped'), 450);
+        }
+
+        if (wasDragged) {
+            saveOrder();
+            toast('Orden guardado ✓');
+        }
+
+        draggedCard = null;
+        dropTarget = null;
+        setTimeout(() => { wasDragged = false; }, 150);
+    });
+}
+
+function swapCards(a, b) {
+    const parent = a.parentNode;
+    const marker = document.createElement('div');
+    marker.style.display = 'none';
+    parent.insertBefore(marker, a);
+    parent.insertBefore(a, b);
+    parent.insertBefore(b, marker);
+    parent.removeChild(marker);
+}
+
+function getCard(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el ? el.closest('.module-card') : null;
+}
+
+function clearMark() {
+    document.querySelectorAll('.module-card.drag-target').forEach(c => c.classList.remove('drag-target'));
+}
+
+// ——— PERSISTENCIA (servidor) ———
+function saveOrder() {
+    const ids = Array.from(document.querySelectorAll('#modulesContainer .module-card'))
+        .map(c => c.dataset.id);
+
+    fetch('/api/app-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: ids })
+    }).catch(err => console.warn('Error guardando orden:', err));
+}
+
+function restoreOrder() {
+    if (!SERVER_ORDER || !Array.isArray(SERVER_ORDER)) return;
+    const container = document.getElementById('modulesContainer');
+    const map = {};
+    container.querySelectorAll('.module-card').forEach(c => map[c.dataset.id] = c);
+    SERVER_ORDER.forEach(id => { if (map[id]) container.appendChild(map[id]); });
+}
+
+function resetOrder() {
+    fetch('/api/app-order', { method: 'DELETE' })
+        .catch(err => console.warn('Error reseteando:', err));
+    toast('Orden restaurado');
+    setTimeout(() => location.reload(), 400);
+}
+
+// ——— LOCK ———
+function toggleLock() {
+    isLocked = !isLocked;
+    const btn = document.getElementById('btnLock');
+    const icon = document.getElementById('lockIcon');
+    const txt = document.getElementById('lockText');
+    const cards = document.querySelectorAll('#modulesContainer .module-card');
+
+    if (isLocked) {
+        btn.classList.add('active');
+        icon.className = 'fa-solid fa-lock';
+        txt.textContent = 'Fijo';
+        cards.forEach(c => c.setAttribute('draggable', 'false'));
+        toast('Orden bloqueado 🔒');
+    } else {
+        btn.classList.remove('active');
+        icon.className = 'fa-solid fa-lock-open';
+        txt.textContent = 'Libre';
+        cards.forEach(c => c.setAttribute('draggable', 'true'));
+        toast('Orden desbloqueado 🔓');
     }
+}
 
-    // ——— TOAST ———
-    function toast(msg) {
-        const el = document.getElementById('dragToast');
-        document.getElementById('dragToastMsg').textContent = msg;
-        el.classList.add('show');
-        setTimeout(() => el.classList.remove('show'), 2000);
-    }
+// ——— TOAST ———
+function toast(msg) {
+    const el = document.getElementById('dragToast');
+    document.getElementById('dragToastMsg').textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+}
 
-    // ——— FILTRAR ———
-    function filterModules(query) {
-        const cards = document.querySelectorAll('#modulesContainer .module-card');
-        const noResults = document.getElementById('noResults');
-        let visible = 0;
-        query = query.toLowerCase();
+// ——— FILTRAR ———
+function filterModules(query) {
+    const cards = document.querySelectorAll('#modulesContainer .module-card');
+    const noResults = document.getElementById('noResults');
+    let visible = 0;
+    query = query.toLowerCase();
 
-        cards.forEach(card => {
-            const kw = card.dataset.name.toLowerCase();
-            const title = card.querySelector('.module-title').innerText.toLowerCase();
-            const desc = card.querySelector('.module-desc').innerText.toLowerCase();
+    cards.forEach(card => {
+        const kw = card.dataset.name.toLowerCase();
+        const title = card.querySelector('.module-title').innerText.toLowerCase();
+        const desc = card.querySelector('.module-desc').innerText.toLowerCase();
 
-            if (kw.includes(query) || title.includes(query) || desc.includes(query)) {
-                card.style.display = 'flex';
-                visible++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
+        if (kw.includes(query) || title.includes(query) || desc.includes(query)) {
+            card.style.display = 'flex';
+            visible++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
 
-        noResults.style.display = visible === 0 ? 'block' : 'none';
-    }
+    noResults.style.display = visible === 0 ? 'block' : 'none';
+}
 </script>
 
 {% endblock %}

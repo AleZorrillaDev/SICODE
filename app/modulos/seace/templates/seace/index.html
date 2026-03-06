@@ -28,102 +28,95 @@
              ========================================== -->
         <div class="sc-sidebar">
 
-            <!-- Card: Modo de operación -->
+            <!-- Card Principial: CRUCE EXCEL (Prioritario) -->
+            <div class="sc-card">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <h3>CRUCE DE DATOS (EXCEL)</h3>
+                </div>
+                
+                <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 20px; line-height: 1.5;">
+                    Carga un archivo Excel para cruzar sus RUCs con la base de datos de contratos del SEACE.
+                </p>
+
+                <!-- Dropzone Principal (SHRINKED) -->
+                <div class="sc-field">
+                    <div class="sc-dropzone" id="dropzone-cruce"
+                        onclick="document.getElementById('fileInputCruce').click()"
+                        style="padding: 20px 15px; border-width: 2px; background: #fafcff;">
+                        <i class="fa-solid fa-cloud-arrow-up sc-dropzone-icon" style="font-size: 28px; margin-bottom: 5px;"></i>
+                        <span class="sc-dropzone-text" id="labelFileCruce" style="font-size: 13px; font-weight: 700; color: var(--primary-blue);">
+                            Cargar Excel Base
+                        </span>
+                        <input type="file" id="fileInputCruce" accept=".xlsx,.xls" hidden
+                            onchange="onFileCruceChange()">
+                    </div>
+                </div>
+
+
+            </div>
+
+            <!-- Card: Parámetros y Búsqueda Manual -->
             <div class="sc-card">
                 <div class="sc-card-header">
                     <i class="fa-solid fa-sliders"></i>
-                    <h3>MODO DE OPERACIÓN</h3>
-                </div>
-                <div class="sc-mode-tabs">
-                    <button class="sc-tab active" id="tab-consulta" onclick="setMode('consulta')">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        Consulta RUCs
-                    </button>
-                    <button class="sc-tab" id="tab-cruce" onclick="setMode('cruce')">
-                        <i class="fa-solid fa-code-merge"></i>
-                        Cruce Excel
-                    </button>
-                </div>
-            </div>
-
-            <!-- Card: Parámetros -->
-            <div class="sc-card">
-                <div class="sc-card-header">
-                    <i class="fa-solid fa-gear"></i>
-                    <h3>PARÁMETROS</h3>
+                    <h3>PARÁMETROS Y RUCs</h3>
                 </div>
 
                 <!-- Fecha -->
                 <div class="sc-field">
                     <div class="sc-field-label">
-                        <i class="fa-solid fa-calendar-day"></i>
-                        FECHA VIGENCIA DESDE
+                        <i class="fa-solid fa-calendar-alt"></i>
+                        VALIDEZ DESDE
                     </div>
-                    <input type="date" class="sc-input" id="startDate" value="2025-12-01">
+                    <input type="date" class="sc-input" id="startDate" value="2025-01-01">
                 </div>
 
-                <!-- ===== MODO CONSULTA: RUCs ===== -->
-                <div id="panel-consulta">
-                    <div class="sc-field">
-                        <div class="sc-field-label">
-                            <i class="fa-solid fa-list-ol"></i>
-                            RUCs DE PROVEEDORES
-                        </div>
-                        <textarea id="rucsTextarea" class="sc-textarea"
-                            placeholder="Uno por línea:&#10;20100000001&#10;20200000002&#10;20300000003"></textarea>
+                <!-- Cargar Lista de RUCs (Archivo) -->
+                <div class="sc-field" style="margin-top: 15px;">
+                    <div class="sc-field-label">
+                        <i class="fa-solid fa-file-invoice"></i>
+                        CARGAR LISTA RUCs (TXT/EXCEL)
                     </div>
-
-                    <div class="sc-field">
-                        <div class="sc-field-label">
-                            <i class="fa-solid fa-file-arrow-up"></i>
-                            Ó CARGAR ARCHIVO
-                        </div>
-                        <div class="sc-dropzone" id="dropzone-rucs"
-                            onclick="document.getElementById('fileInputRucs').click()">
-                            <i class="fa-solid fa-cloud-arrow-up sc-dropzone-icon"></i>
-                            <span class="sc-dropzone-text" id="labelFileRucs">Arrastra o haz clic — Excel / TXT</span>
-                            <input type="file" id="fileInputRucs" accept=".txt,.xlsx,.xls" hidden
-                                onchange="onFileRucsChange()">
-                        </div>
+                    <div class="sc-dropzone" id="dropzone-rucs"
+                        onclick="document.getElementById('fileInputRucs').click()"
+                        style="padding: 15px; border-style: solid; border-width: 1px; background: #f8fafc;">
+                        <i class="fa-solid fa-file-circle-plus sc-dropzone-icon" style="font-size: 18px; margin-bottom: 4px;"></i>
+                        <span class="sc-dropzone-text" id="labelFileRucs" style="font-size: 11px;">Clic para subir archivo</span>
+                        <input type="file" id="fileInputRucs" accept=".txt,.xlsx,.xls" hidden
+                            onchange="onFileRucsChange()">
                     </div>
                 </div>
 
-                <!-- ===== MODO CRUCE: Excel base ===== -->
-                <div id="panel-cruce" style="display:none;">
-                    <div class="sc-field">
-                        <div class="sc-field-label">
-                            <i class="fa-solid fa-file-excel"></i>
-                            ARCHIVO EXCEL BASE
+                <!-- Búsqueda Manual (Oculto por defecto) -->
+                <div style="margin-top: 15px;">
+                    <button type="button" class="sc-toggle-btn" id="btn-toggle-manual" onclick="toggleManualSearch()">
+                        <span>Búsqueda Manual (Copiar/Pegar)</span>
+                        <i class="fa-solid fa-chevron-down" id="manual-toggle-icon"></i>
+                    </button>
+                    
+                    <div id="panel-manual-search" style="display: none; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                        <div class="sc-field">
+                            <div class="sc-field-label">
+                                <i class="fa-solid fa-keyboard"></i>
+                                PEGAR RUCs MANUALMENTE
+                            </div>
+                            <textarea id="rucsTextarea" class="sc-textarea" style="min-height: 120px;"
+                                placeholder="Ejemplo:&#10;20123456789&#10;20987654321&#10;(Uno por cada línea)"></textarea>
                         </div>
-                        <div class="sc-dropzone" id="dropzone-cruce"
-                            onclick="document.getElementById('fileInputCruce').click()">
-                            <i class="fa-solid fa-cloud-arrow-up sc-dropzone-icon"></i>
-                            <span class="sc-dropzone-text" id="labelFileCruce">Excel con columna de RUCs para
-                                cruce</span>
-                            <input type="file" id="fileInputCruce" accept=".xlsx,.xls" hidden
-                                onchange="onFileCruceChange()">
-                        </div>
-                    </div>
-
-                    <div class="sc-field">
-                        <div class="sc-field-label">
-                            <i class="fa-solid fa-table-columns"></i>
-                            NOMBRE COLUMNA RUC
-                        </div>
-                        <input type="text" class="sc-input" id="colRuc" placeholder="Ej: RUC (auto-detecta si vacío)">
                     </div>
                 </div>
             </div>
 
             <!-- Acciones -->
             <div class="sc-actions">
-                <button class="sc-btn sc-btn-primary" id="btnProcess" onclick="startProcess()">
+                <button class="sc-btn sc-btn-primary" id="btnProcess" onclick="startProcess()" style="height: 52px; font-size: 14px;">
                     <i class="fa-solid fa-play"></i>
-                    <span id="btnProcessLabel">Iniciar Procesamiento</span>
+                    <span id="btnProcessLabel">EJECUTAR CRUCE SEACE</span>
                 </button>
                 <button class="sc-btn sc-btn-secondary" onclick="clearAll()">
-                    <i class="fa-solid fa-broom"></i>
-                    Limpiar Todo
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Reiniciar Vista
                 </button>
             </div>
 
@@ -211,35 +204,36 @@
 {% block scripts %}
 <script>
     /* ============================================================
-       MODO
+       MODOS Y UI
        ============================================================ */
-    let currentMode = 'consulta';
+    let currentMode = 'cruce'; // Por defecto Cruce
+    let manualSearchVisible = false;
 
-    function setMode(mode) {
-        currentMode = mode;
-        document.getElementById('tab-consulta').classList.toggle('active', mode === 'consulta');
-        document.getElementById('tab-cruce').classList.toggle('active', mode === 'cruce');
-        document.getElementById('panel-consulta').style.display = mode === 'consulta' ? 'block' : 'none';
-        document.getElementById('panel-cruce').style.display = mode === 'cruce' ? 'block' : 'none';
-        resetResults();
+    function toggleManualSearch() {
+        manualSearchVisible = !manualSearchVisible;
+        const panel = document.getElementById('panel-manual-search');
+        const icon = document.getElementById('manual-toggle-icon');
+        const btn = document.getElementById('btn-toggle-manual');
+        
+        if (manualSearchVisible) {
+            panel.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+            btn.classList.add('active');
+            currentMode = 'consulta';
+        } else {
+            panel.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+            btn.classList.remove('active');
+            // Si hay un archivo de cruce, volvemos a modo cruce
+            if (document.getElementById('fileInputCruce').files[0]) {
+                currentMode = 'cruce';
+            }
+        }
     }
 
     /* ============================================================
        ARCHIVOS
        ============================================================ */
-    function onFileRucsChange() {
-        const f = document.getElementById('fileInputRucs').files[0];
-        const label = document.getElementById('labelFileRucs');
-        const zone = document.getElementById('dropzone-rucs');
-        if (f) {
-            label.textContent = f.name;
-            zone.classList.add('has-file');
-        } else {
-            label.textContent = 'Arrastra o haz clic — Excel / TXT';
-            zone.classList.remove('has-file');
-        }
-    }
-
     function onFileCruceChange() {
         const f = document.getElementById('fileInputCruce').files[0];
         const label = document.getElementById('labelFileCruce');
@@ -247,8 +241,25 @@
         if (f) {
             label.textContent = f.name;
             zone.classList.add('has-file');
+            currentMode = 'cruce'; 
+            showToast('Excel Base cargado.', 'success');
         } else {
-            label.textContent = 'Excel con columna de RUCs para cruce';
+            label.textContent = 'Cargar Excel Base';
+            zone.classList.remove('has-file');
+        }
+    }
+
+    function onFileRucsChange() {
+        const f = document.getElementById('fileInputRucs').files[0];
+        const label = document.getElementById('labelFileRucs');
+        const zone = document.getElementById('dropzone-rucs');
+        if (f) {
+            label.textContent = f.name;
+            zone.classList.add('has-file');
+            currentMode = 'consulta'; // Cambiar a modo consulta/lista
+            showToast('Lista de RUCs cargada.', 'success');
+        } else {
+            label.textContent = 'Clic para subir archivo';
             zone.classList.remove('has-file');
         }
     }
@@ -258,15 +269,16 @@
        ============================================================ */
     function clearAll() {
         document.getElementById('rucsTextarea').value = '';
-        document.getElementById('fileInputRucs').value = '';
         document.getElementById('fileInputCruce').value = '';
-        document.getElementById('labelFileRucs').textContent = 'Arrastra o haz clic — Excel / TXT';
-        document.getElementById('dropzone-rucs').classList.remove('has-file');
-        document.getElementById('labelFileCruce').textContent = 'Excel con columna de RUCs para cruce';
+        document.getElementById('fileInputRucs').value = '';
+        document.getElementById('labelFileCruce').textContent = 'Cargar Excel Base';
+        document.getElementById('labelFileRucs').textContent = 'Clic para subir archivo';
         document.getElementById('dropzone-cruce').classList.remove('has-file');
-        document.getElementById('colRuc').value = '';
+        document.getElementById('dropzone-rucs').classList.remove('has-file');
+        
+        if (manualSearchVisible) toggleManualSearch();
         resetResults();
-        showToast('Se limpiaron todos los campos.', 'info');
+        showToast('Vista reiniciada.', 'info');
     }
 
     function resetResults() {
@@ -286,28 +298,29 @@
         const label = document.getElementById('btnProcessLabel');
 
         // Recoger data
-        let rucsText = '';
-        if (currentMode === 'consulta') {
-            rucsText = document.getElementById('rucsTextarea').value.trim();
-        }
-        const fileRucs = document.getElementById('fileInputRucs').files[0];
+        const rucsText = document.getElementById('rucsTextarea').value.trim();
         const fileCruce = document.getElementById('fileInputCruce').files[0];
+        const fileRucs = document.getElementById('fileInputRucs').files[0];
         const startDate = document.getElementById('startDate').value;
+
+        // Prioridad: 1. Excel Cruce, 2. Archivo RUCs, 3. Manual
+        if (fileCruce) currentMode = 'cruce';
+        else if (fileRucs || rucsText) currentMode = 'consulta';
 
         // Validaciones
         if (currentMode === 'consulta' && !rucsText && !fileRucs) {
-            showToast('Ingrese RUCs o seleccione un archivo.', 'warning');
+            showToast('Ingrese RUCs o suba un archivo de lista.', 'warning');
             return;
         }
         if (currentMode === 'cruce' && !fileCruce) {
-            showToast('Seleccione un archivo Excel base para el cruce.', 'warning');
+            showToast('Debe cargar un archivo Excel para realizar el cruce.', 'warning');
             return;
         }
 
         // UI: Loading
         btn.disabled = true;
-        label.textContent = 'Procesando...';
-        btn.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
+        label.textContent = 'PROCESANDO SEACE...';
+        btn.querySelector('i').className = 'fa-solid fa-sync fa-spin';
 
         document.getElementById('progressCard').style.display = 'block';
         document.getElementById('emptyState').style.display = 'none';
@@ -317,17 +330,17 @@
 
         const fill = document.getElementById('progressFill');
         const pct = document.getElementById('progressPercent');
-        fill.style.width = '5%';
-        pct.textContent = '5%';
+        fill.style.width = '0%';
+        pct.textContent = '0%';
 
-        let p = 5;
+        let p = 0;
         const interval = setInterval(() => {
-            if (p < 88) {
-                p += Math.random() * 4;
+            if (p < 92) {
+                p += Math.random() * 3;
                 fill.style.width = Math.round(p) + '%';
                 pct.textContent = Math.round(p) + '%';
             }
-        }, 350);
+        }, 400);
 
         // FormData
         const fd = new FormData();
@@ -335,25 +348,24 @@
             if (rucsText) fd.append('rucs', rucsText);
             if (fileRucs) fd.append('file', fileRucs);
         } else {
-            if (fileCruce) fd.append('file', fileCruce);
-            const col = document.getElementById('colRuc').value.trim();
-            if (col) fd.append('col_ruc', col);
+            fd.append('file', fileCruce);
         }
         fd.append('start_date', startDate);
 
         try {
             const res = await fetch('/seace/process', { method: 'POST', body: fd });
             clearInterval(interval);
-            fill.style.width = '100%';
-            pct.textContent = '100%';
-
+            
             const data = await res.json();
             if (!res.ok || data.status === 'error') throw new Error(data.message || 'Error en el servidor');
+
+            fill.style.width = '100%';
+            pct.textContent = '100%';
 
             setTimeout(() => {
                 document.getElementById('progressCard').style.display = 'none';
                 renderResults(data);
-            }, 500);
+            }, 600);
 
         } catch (err) {
             clearInterval(interval);
@@ -362,7 +374,7 @@
             document.getElementById('emptyState').style.display = 'flex';
         } finally {
             btn.disabled = false;
-            label.textContent = 'Iniciar Procesamiento';
+            label.textContent = 'EJECUTAR CRUCE SEACE';
             btn.querySelector('i').className = 'fa-solid fa-play';
         }
     }
