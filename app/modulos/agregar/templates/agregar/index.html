@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Agregar | SUNAT Registro Inteligente{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/agregar.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- Dynamic Background -->
+<div class="ag-bg-blur ag-blur-red"></div>
+<div class="ag-bg-blur ag-blur-blue"></div>
+
+<div class="ag-container">
+
+    <!-- HEADER -->
+    <header class="ag-glass-header">
+        <div class="ag-header-content">
+            <div class="ag-brand">
+                <div class="ag-logo-box">
+                    <i class="ph ph-buildings"></i>
+                </div>
+                <div class="ag-brand-text">
+                    <h1>SUNAT</h1>
+                    <p>Plataforma de Registro</p>
+                </div>
+            </div>
+            <div id="ag-connection-status" class="ag-status-pill">
+                <div class="ag-pulse-dot"></div>
+                <span id="ag-status-text">Verificando conexión...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══ PANEL EXCEL ACTIVO ══════════════════════════════════════════════ -->
+    <div class="ag-excel-panel" id="ag-excel-panel">
+
+        <!-- Fila de archivo activo -->
+        <div class="ag-excel-active">
+            <div class="ag-excel-icon">
+                <i class="ph ph-microsoft-excel-logo" style="color:#1D6F42; font-size:22px;"></i>
+            </div>
+            <div class="ag-excel-info">
+                <span class="ag-excel-label">Archivo activo</span>
+                <span class="ag-excel-name" id="ag-excel-filename">Cargando...</span>
+                <span class="ag-excel-path" id="ag-excel-path"></span>
+            </div>
+            <button class="ag-btn-change-excel" onclick="agToggleExcelConfig()" id="ag-btn-change-toggle">
+                <i class="ph ph-pencil-simple"></i> Cambiar
+            </button>
+        </div>
+
+        <!-- Panel desplegable de configuración -->
+        <div class="ag-excel-config hidden" id="ag-excel-config">
+
+            <div class="ag-config-tabs">
+                <button class="ag-config-tab active" id="ag-tab-upload" onclick="agSwitchTab('upload')">
+                    <i class="ph ph-upload-simple"></i> Subir archivo
+                </button>
+                <button class="ag-config-tab" id="ag-tab-path" onclick="agSwitchTab('path')">
+                    <i class="ph ph-folder-open"></i> Ruta del servidor
+                </button>
+                <button class="ag-config-tab" id="ag-tab-new" onclick="agSwitchTab('new')">
+                    <i class="ph ph-plus-circle"></i> Nuevo Excel
+                </button>
+            </div>
+
+            <!-- Tab: Subir archivo -->
+            <div class="ag-config-body" id="ag-body-upload">
+                <label class="ag-dropzone" id="ag-dropzone">
+                    <input type="file" id="ag-file-input" accept=".xlsx,.xls" style="display:none" onchange="agHandleFileSelect(this)">
+                    <div class="ag-dropzone-content" id="ag-dropzone-content">
+                        <i class="ph ph-cloud-arrow-up"></i>
+                        <span>Arrastra tu Excel aquí o <strong>haz click</strong></span>
+                        <small>Admite .xlsx y .xls</small>
+                    </div>
+                    <div class="ag-upload-progress hidden" id="ag-upload-progress">
+                        <i class="ph ph-spinner-gap" style="animation:agSpin 1s linear infinite"></i>
+                        <span>Subiendo archivo...</span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Tab: Ruta servidor -->
+            <div class="ag-config-body hidden" id="ag-body-path">
+                <div class="ag-path-row">
+                    <div class="ag-input-wrapper">
+                        <i class="ph ph-folder"></i>
+                        <input type="text" id="ag-server-path"
+                            placeholder="Ej: C:\Users\Usuario\Desktop\MiExcel.xlsx"
+                            autocomplete="off">
+                    </div>
+                    <button class="ag-btn-primary" onclick="agSetPath()">
+                        <i class="ph ph-check"></i> Aplicar
+                    </button>
+                </div>
+                <p class="ag-path-hint">Introduce la ruta completa del archivo en el servidor donde corre la app.</p>
+            </div>
+
+            <!-- Tab: Nuevo Excel -->
+            <div class="ag-config-body hidden" id="ag-body-new">
+                <div class="ag-path-row">
+                    <div class="ag-input-wrapper">
+                        <i class="ph ph-file-xls"></i>
+                        <input type="text" id="ag-new-filename"
+                            value="FORMULARIO194_MESADEPARTES.xlsx"
+                            placeholder="nombre_del_archivo.xlsx"
+                            autocomplete="off">
+                    </div>
+                    <button class="ag-btn-primary" onclick="agCreateNew()">
+                        <i class="ph ph-plus"></i> Crear
+                    </button>
+                </div>
+                <p class="ag-path-hint">Se creará en la carpeta raíz de la aplicación con las hojas necesarias.</p>
+            </div>
+
+        </div>
+    </div>
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+
+    <main>
+
+        <!-- DASHBOARD CARDS -->
+        <div class="ag-dashboard-cards">
+            <div class="ag-stat-card ag-form-variant">
+                <div class="ag-stat-icon"><i class="ph ph-file-text"></i></div>
+                <div class="ag-stat-info">
+                    <h3>Formulario 194</h3>
+                    <p class="ag-stat-value" id="ag-count-formulario">0</p>
+                    <span class="ag-stat-label">Registros Guardados</span>
+                </div>
+            </div>
+            <div class="ag-stat-card ag-exp-variant">
+                <div class="ag-stat-icon"><i class="ph ph-folder-open"></i></div>
+                <div class="ag-stat-info">
+                    <h3>Expedientes M.P.</h3>
+                    <p class="ag-stat-value" id="ag-count-expediente">0</p>
+                    <span class="ag-stat-label">Registros Guardados</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTRATION PANEL -->
+        <div class="ag-registration-panel">
+
+            <div class="ag-type-selector">
+                <button class="ag-type-btn active" id="ag-btn-formulario" onclick="agSetMode('formulario')">
+                    <i class="ph ph-file-text"></i>
+                    <span>Formulario 194</span>
+                </button>
+                <button class="ag-type-btn" id="ag-btn-expediente" onclick="agSetMode('expediente')">
+                    <i class="ph ph-folder-open"></i>
+                    <span>Exp. Mesa de Partes</span>
+                </button>
+            </div>
+
+            <div class="ag-forms-wrapper" id="ag-forms-wrapper">
+
+                <!-- FORMULARIO 194 -->
+                <form id="ag-form-formulario" class="ag-dynamic-form" onsubmit="return agSaveFormulario(event)">
+                    <div class="ag-form-grid">
+
+                        <div class="ag-input-group ag-full-width">
+                            <label for="ag-f-documento">N° de Documento</label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-hash"></i>
+                                <input type="text" id="ag-f-documento" placeholder="Ej: 1390400006411" required autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="ag-input-group ag-full-width">
+                            <label for="ag-f-razon">Razón Social</label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-buildings"></i>
+                                <input type="text" id="ag-f-razon" placeholder="Nombre de la empresa o persona" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="ag-input-group">
+                            <label for="ag-f-ruc">RUC <span class="ag-validation-msg" id="ag-f-ruc-hint"></span></label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-identification-card"></i>
+                                <input type="text" id="ag-f-ruc" placeholder="11 dígitos" maxlength="11" required autocomplete="off" oninput="agValidateRUC(this)">
+                            </div>
+                        </div>
+
+                        <div class="ag-input-group">
+                            <label for="ag-f-fecha">
+                                Fecha Extrema
+                                <button type="button" class="ag-btn-tool" onclick="agFillToday('ag-f-fecha')">
+                                    <i class="ph ph-calendar-plus"></i> Hoy
+                                </button>
+                            </label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-calendar-blank"></i>
+                                <input type="text" id="ag-f-fecha" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" oninput="agFormatDate(this)">
+                            </div>
+                        </div>
+
+                        <div class="ag-input-group ag-full-width">
+                            <label for="ag-f-obs">Observaciones <span class="ag-badge-optional">Opcional</span></label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-chat-text"></i>
+                                <input type="text" id="ag-f-obs" placeholder="Detalles adicionales..." autocomplete="off">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="ag-form-actions">
+                        <button type="button" class="ag-btn-secondary" onclick="agClearForm()">
+                            <i class="ph ph-arrow-counter-clockwise"></i> Limpiar
+                        </button>
+                        <button type="submit" class="ag-btn-primary" id="ag-save-formulario">
+                            <i class="ph ph-floppy-disk"></i> Guardar Registro
+                        </button>
+                    </div>
+                </form>
+
+                <!-- EXPEDIENTE -->
+                <form id="ag-form-expediente" class="ag-dynamic-form hidden" onsubmit="return agSaveExpediente(event)">
+                    <div class="ag-form-grid">
+
+                        <div class="ag-input-group ag-full-width">
+                            <label>N° Expediente</label>
+                            <div class="ag-smart-input-container">
+                                <div class="ag-smart-prefix">000-URD</div>
+                                <div class="ag-smart-fields">
+                                    <input type="text" id="ag-e-p1" maxlength="3" placeholder="000" oninput="agAutoTab(this,'ag-e-p2',3)" autocomplete="off">
+                                    <span class="ag-divider">-</span>
+                                    <input type="text" id="ag-e-p2" maxlength="4" placeholder="0000" oninput="agAutoTab(this,'ag-e-p3',4)" autocomplete="off">
+                                    <span class="ag-divider">-</span>
+                                    <input type="text" id="ag-e-p3" maxlength="7" placeholder="0000000" oninput="agAutoTab(this,'ag-e-p4',7)" autocomplete="off" class="wide">
+                                    <span class="ag-divider">-</span>
+                                    <input type="text" id="ag-e-p4" maxlength="1" placeholder="0" autocomplete="off" class="narrow">
+                                </div>
+                                <div class="ag-smart-status" id="ag-e-smart-status"><i class="ph ph-check-circle"></i></div>
+                            </div>
+                        </div>
+
+                        <div class="ag-input-group ag-full-width">
+                            <label for="ag-e-razon">Razón Social</label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-buildings"></i>
+                                <input type="text" id="ag-e-razon" placeholder="Nombre o razón social" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="ag-input-group">
+                            <label for="ag-e-ruc">RUC <span class="ag-validation-msg" id="ag-e-ruc-hint"></span></label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-identification-card"></i>
+                                <input type="text" id="ag-e-ruc" placeholder="11 dígitos" maxlength="11" required autocomplete="off" oninput="agValidateRUC(this)">
+                            </div>
+                        </div>
+
+                        <div class="ag-input-group">
+                            <label for="ag-e-fecha">
+                                Fecha Extrema
+                                <button type="button" class="ag-btn-tool" onclick="agFillToday('ag-e-fecha')">
+                                    <i class="ph ph-calendar-plus"></i> Hoy
+                                </button>
+                            </label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-calendar-blank"></i>
+                                <input type="text" id="ag-e-fecha" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" oninput="agFormatDate(this)">
+                            </div>
+                        </div>
+
+                        <div class="ag-input-group ag-full-width">
+                            <label for="ag-e-obs">Observaciones <span class="ag-badge-optional">Opcional</span></label>
+                            <div class="ag-input-wrapper">
+                                <i class="ph ph-chat-text"></i>
+                                <input type="text" id="ag-e-obs" placeholder="Detalles adicionales..." autocomplete="off">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="ag-form-actions">
+                        <button type="button" class="ag-btn-secondary" onclick="agClearForm()">
+                            <i class="ph ph-arrow-counter-clockwise"></i> Limpiar
+                        </button>
+                        <button type="submit" class="ag-btn-primary ag-blue-accent" id="ag-save-expediente">
+                            <i class="ph ph-floppy-disk"></i> Guardar Expediente
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+        <div class="ag-footer-note">
+            <i class="ph ph-info"></i> Los cambios se guardan directamente en el archivo Excel seleccionado.
+        </div>
+
+    </main>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/agregar.js"></script>
+{% endblock %}

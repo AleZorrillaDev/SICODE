@@ -56,40 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== TOAST NOTIFICATIONS (Copied from DocCheck) =====
     function showToast(type, message) {
-        const container = document.getElementById("toast-container");
-        if (!container) return;
-
-        const toast = document.createElement("div");
-        toast.className = `toast toast-${type}`;
-
-        const icons = {
-            success: '<i class="fa-solid fa-check-circle"></i>',
-            error: '<i class="fa-solid fa-times-circle"></i>',
-            info: '<i class="fa-solid fa-info-circle"></i>',
-            warning: '<i class="fa-solid fa-exclamation-triangle"></i>'
-        };
-
-        toast.innerHTML = `
-            <span class="toast-icon">${icons[type] || icons.info}</span>
-            <span class="toast-message">${message}</span>
-            <button class="toast-close"><i class="fa-solid fa-times"></i></button>
-        `;
-
-        container.appendChild(toast);
-
-        // Auto cerrar después de 4 segundos
-        const autoClose = setTimeout(() => {
-            toast.classList.add("toast-exit");
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-
-        // Cerrar manualmente
-        toast.querySelector(".toast-close").addEventListener("click", () => {
-            clearTimeout(autoClose);
-            toast.classList.add("toast-exit");
-            setTimeout(() => toast.remove(), 300);
-        });
+        if (window.showToast) {
+            window.showToast(message, type);
+        }
     }
+
 
     // --- Folder Selection Logic (Web Explorer) ---
     const folderBreadcrumbs = document.getElementById('folder-breadcrumbs');
@@ -476,10 +447,12 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPause.innerHTML = '<i class="fa-solid fa-play"></i> Reanudar';
             progressText.textContent = "Búsqueda pausada";
             progressContainer.classList.remove('processing');
+            showToast('info', 'Búsqueda pausada');
         } else {
             btnPause.innerHTML = '<i class="fa-solid fa-pause"></i> Pausar';
             progressText.textContent = "Continuando búsqueda...";
             progressContainer.classList.add('processing');
+            showToast('info', 'Búsqueda reanudada');
         }
     });
 
@@ -493,14 +466,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnExportPdf.addEventListener('click', () => {
         window.location.href = `/bpsearch/export/pdf?palabra=${encodeURIComponent(getSearchWord())}`;
+        showToast('info', 'Exportando a PDF...');
     });
 
     btnExportExcel.addEventListener('click', () => {
         window.location.href = `/bpsearch/export/excel?palabra=${encodeURIComponent(getSearchWord())}`;
+        showToast('info', 'Exportando a Excel...');
     });
 
     btnExportTxt.addEventListener('click', () => {
         window.location.href = `/bpsearch/export/txt?palabra=${encodeURIComponent(getSearchWord())}`;
+        showToast('info', 'Exportando a TXT...');
     });
 
     // --- Clear History ---
@@ -509,12 +485,12 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const palabra = searchInput.value.trim();
             if (!palabra) {
-                showToast('Ingresa una palabra para borrar su historial', 'warning');
+                showToast('warning', 'Ingresa una palabra para borrar su historial');
                 return;
             }
 
             if (!currentFolder) {
-                showToast('Selecciona una carpeta primero', 'warning');
+                showToast('warning', 'Selecciona una carpeta primero');
                 return;
             }
 
@@ -526,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify({ palabra: palabra })
                     });
                     const data = await res.json();
-                    showToast(data.message, data.status === 'success' ? 'success' : 'info');
+                    showToast('success', data.message || 'Historial borrado');
                 } catch (e) {
                     showToast('Error al borrar historial', 'error');
                 }

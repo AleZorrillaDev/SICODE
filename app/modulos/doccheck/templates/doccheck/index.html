@@ -4,10 +4,224 @@
 
 {% block head_extra %}
 <link rel="stylesheet" href="/static/css/doccheck.css?v=66">
+<style>
+    /* --- Tutorial Styles Refined --- */
+    .sc-tour-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.05); z-index: 9000;
+        display: none; opacity: 0; transition: opacity 0.5s ease;
+        pointer-events: auto;
+    }
+    .sc-tour-overlay.show { display: block; opacity: 1; }
+    
+    .sc-tour-highlight {
+        position: absolute; z-index: 9001;
+        box-shadow: 0 0 0 9999px rgba(0, 10, 30, 0.4);
+        border: 3px solid #0066b3;
+        border-radius: 20px; pointer-events: none;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box;
+    }
+    
+    .sc-tour-window {
+        position: absolute; width: 340px; background: white; border-radius: 20px;
+        padding: 28px; box-shadow: 0 25px 60px rgba(0, 30, 60, 0.25);
+        z-index: 9010; display: none; flex-direction: column; gap: 18px;
+        animation: tourFadeIn 0.3s ease-out;
+    }
+    @keyframes tourFadeIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    .sc-tour-title { font-size: 19px; font-weight: 900; color: #0066b3; display: flex; align-items: center; gap: 12px; }
+    .sc-tour-text { font-size: 14px; color: #475569; line-height: 1.7; font-weight: 500; }
+    .sc-tour-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .sc-tour-dots { display: flex; gap: 4px; }
+    .sc-tour-dot { width: 6px; height: 6px; border-radius: 50%; background: #e5e7eb; }
+    .sc-tour-dot.active { background: #0066b3; width: 15px; border-radius: 10px; }
+    
+    .btn-tour-next { background: #0066b3; color: white; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    .btn-tour-skip { background: transparent; color: #94a3b8; border: none; font-weight: 600; cursor: pointer; font-size: 12px; }
+    
+    .btn-help-header {
+        position: absolute; top: 50%; transform: translateY(-50%); right: 25px;
+        background: rgba(255, 255, 255, 0.9); color: #0066b3; border: 1.5px solid #cbd5e1;
+        height: 34px; padding: 0 14px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer;
+        display: flex; align-items: center; gap: 6px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 9500; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .btn-help-header:hover { background: white; border-color: #0066b3; color: #0066b3; transform: translateY(-55%); }
+    .btn-help-header i { font-size: 15px; }
+
+    /* Tour Mode Helpers */
+    .tour-simulating :placeholder-shown { opacity: 0.5; }
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script src="/static/js/doccheck.js?v=2"></script>
+<script>
+    // --- Tour Logic DocCheck ---
+    let tourStep = 0;
+    let tourActive = false;
+    let tourOriginalState = {}; 
+
+    const tourData = [
+        {
+            target: ".nav-row",
+            title: "Navegación de Registros",
+            text: "Usa las flechas o escribe el número directamente para moverte entre los registros cargados en tu base de datos.",
+            pos: "bottom"
+        },
+        {
+            target: ".header-row",
+            title: "Gestión de Archivos",
+            text: "Aquí puedes cargar tu archivo Excel (.xlsx) y guardar los cambios realizados. ¡No olvides guardar antes de salir!",
+            pos: "bottom"
+        },
+        {
+            target: ".form-section",
+            title: "Editor de Datos",
+            text: "Modifica cualquier campo del registro actual. Los cambios se resaltan automáticamente para que no pierdas el rastro.",
+            pos: "right",
+            simulate: "fields"
+        },
+        {
+            target: "#last-change-badge",
+            title: "Historial Rápido",
+            text: "Este indicador aparece cuando hay cambios guardados. Pasa el mouse para ver exactamente qué modificaste por última vez.",
+            pos: "left",
+            simulate: "badge"
+        },
+        {
+            target: ".btn-consultar",
+            title: "Consulta Express",
+            text: "Si tienes un RUC en pantalla, este botón te permite validarlo directamente sin cambiar de ventana.",
+            pos: "top"
+        },
+        {
+            target: ".export-group",
+            title: "Exportar Resultados",
+            text: "Una vez completado el trabajo, descarga tu base corregida en formato TXT o Excel con un solo click.",
+            pos: "top"
+        }
+    ];
+
+    function startTour() {
+        tourStep = 0;
+        tourActive = true;
+        
+        // Backup field values exactly
+        tourOriginalState = {
+            badgeDisplay: document.getElementById('last-change-badge').style.display,
+            fields: {}
+        };
+        
+        const ids = ["field-ruc", "field-razon", "record-idx"];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) tourOriginalState.fields[id] = el.value;
+        });
+
+        document.getElementById('tour-overlay').classList.add('show');
+        document.getElementById('tour-highlight').style.display = 'block';
+        document.getElementById('tour-window').style.display = 'flex';
+        showTourStep();
+    }
+
+    function stopTour() {
+        tourActive = false;
+        document.getElementById('tour-overlay').classList.remove('show');
+        document.getElementById('tour-highlight').style.display = 'none';
+        document.getElementById('tour-window').style.display = 'none';
+
+        // Restore values
+        document.getElementById('last-change-badge').style.display = tourOriginalState.badgeDisplay;
+        for (const [id, val] of Object.entries(tourOriginalState.fields)) {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        }
+    }
+
+    function nextTourStep() {
+        tourStep++;
+        if (tourStep >= tourData.length) {
+            stopTour();
+        } else {
+            showTourStep();
+        }
+    }
+
+    function showTourStep() {
+        const step = tourData[tourStep];
+        
+        // Simulation
+        if (step.simulate === "fields") {
+            document.getElementById('field-ruc').value = "20104174023";
+            document.getElementById('field-razon').value = "TELEFONICA DEL PERU S.A.A.";
+        } else if (step.simulate === "badge") {
+            const badge = document.getElementById('last-change-badge');
+            badge.style.display = 'flex';
+            document.getElementById('lcp-registro').textContent = "1";
+            document.getElementById('lcp-campo').textContent = "RUC";
+            document.getElementById('lcp-antiguo').textContent = "20100000000";
+            document.getElementById('lcp-nuevo').textContent = "20104174023";
+            document.getElementById('lcp-fecha').textContent = "09/03/2026 12:53";
+        }
+
+        const targetEl = document.querySelector(step.target);
+        if (!targetEl) { nextTourStep(); return; }
+
+        setTimeout(() => {
+            const rect = targetEl.getBoundingClientRect();
+            const highlight = document.getElementById('tour-highlight');
+            const win = document.getElementById('tour-window');
+            
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+            
+            highlight.style.borderRadius = '20px';
+            const offset = 6; 
+            highlight.style.top = (rect.top + scrollY - offset) + 'px';
+            highlight.style.left = (rect.left + scrollX - offset) + 'px';
+            highlight.style.width = (rect.width + offset * 2) + 'px';
+            highlight.style.height = (rect.height + offset * 2) + 'px';
+
+            document.getElementById('tour-title').innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> ${step.title}`;
+            document.getElementById('tour-text').textContent = step.text;
+            document.getElementById('tour-next-btn').textContent = (tourStep === tourData.length - 1) ? "Finalizar" : "Siguiente";
+
+            const dots = document.getElementById('tour-dots');
+            dots.innerHTML = tourData.map((_, i) => `<div class="sc-tour-dot ${i === tourStep ? 'active' : ''}"></div>`).join('');
+
+            const winWidth = 340;
+            const margin = 20;
+
+            let leftPos = rect.right + margin;
+            if (step.pos === "right") {
+                if (leftPos + winWidth > window.innerWidth) leftPos = rect.left - winWidth - margin;
+                win.style.left = leftPos + 'px';
+                win.style.top = (rect.top + window.scrollY) + 'px';
+            } else if (step.pos === "left") {
+                win.style.left = (rect.left - winWidth - margin) + 'px';
+                win.style.top = (rect.top + window.scrollY) + 'px';
+            } else if (step.pos === "bottom") {
+                leftPos = rect.left + rect.width/2 - winWidth/2;
+                if (leftPos < 10) leftPos = 10;
+                if (leftPos + winWidth > window.innerWidth) leftPos = window.innerWidth - winWidth - 10;
+                win.style.left = leftPos + 'px';
+                win.style.top = (rect.bottom + window.scrollY + margin) + 'px';
+            } else if (step.pos === "top") {
+                leftPos = rect.left + rect.width/2 - winWidth/2;
+                if (leftPos < 10) leftPos = 10;
+                if (leftPos + winWidth > window.innerWidth) leftPos = window.innerWidth - winWidth - 10;
+                win.style.left = leftPos + 'px';
+                const winHeight = win.offsetHeight || 220;
+                win.style.top = (rect.top + window.scrollY - winHeight - margin) + 'px';
+            }
+
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 80);
+    }
+</script>
 {% endblock %}
 
 {% block module_title %}
@@ -16,9 +230,25 @@
     <span class="separator">|</span>
     <span class="module-desc">Consulta de Documentos</span>
 </div>
+<button class="btn-help-header" id="btn-start-tour" onclick="startTour()">
+    <i class="fa-solid fa-circle-question"></i>
+    TUTORIAL
+</button>
 {% endblock %}
 
 {% block content %}
+<!-- Tutorial Overlay Elements -->
+<div id="tour-overlay" class="sc-tour-overlay"></div>
+<div id="tour-highlight" class="sc-tour-highlight" style="display:none;"></div>
+<div id="tour-window" class="sc-tour-window">
+    <div class="sc-tour-title" id="tour-title"></div>
+    <div class="sc-tour-text" id="tour-text"></div>
+    <div class="sc-tour-footer">
+        <button class="btn-tour-skip" onclick="stopTour()">Saltar</button>
+        <div class="sc-tour-dots" id="tour-dots"></div>
+        <button class="btn-tour-next" id="tour-next-btn" onclick="nextTourStep()">Siguiente</button>
+    </div>
+</div>
 
 <!-- Badge: Último cambio (FUERA del .doc-page para que position:fixed funcione) -->
 <div id="last-change-badge" class="last-change-badge" style="display:none;" title="Ver último cambio">
@@ -38,9 +268,6 @@
 </div>
 
 <div class="doc-page" data-record-count="{{ record_count }}">
-
-    <!-- Toast Container -->
-    <div id="toast-container"></div>
 
     <!-- Fila 1: Navegación centrada -->
     <div class="nav-row">

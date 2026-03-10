@@ -1,111 +1,436 @@
 {% extends "base.html" %}
 
-{% block title %}Seace - Consulta de Contratos{% endblock %}
+{% block title %}SEACE - Inteligencia de Contrataciones{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="/static/css/seace.css" />
-<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="/static/css/seace.css?v=11" />
+<style>
+    /* DatePicker Premium Popover (Ahorra espacio) */
+    .sc-datepicker-container {
+        position: relative;
+        width: 100%;
+    }
+    .sc-datepicker-trigger {
+        width: 100%;
+        height: 48px;
+        background: white;
+        border: 2px solid var(--border-gray);
+        border-radius: 14px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        font-family: var(--font-body);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-dark);
+        transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .sc-datepicker-trigger:hover {
+        border-color: var(--primary-blue);
+        background: #fafcff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(1, 99, 172, 0.08);
+    }
+    .sc-datepicker-trigger i {
+        color: var(--primary-blue);
+        font-size: 18px;
+    }
+
+    /* El Popover */
+    .sc-datepicker-popover {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        width: 320px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 45px rgba(0, 75, 150, 0.18);
+        border: 1px solid var(--border-gray);
+        z-index: 1001;
+        padding: 20px;
+        display: none;
+        animation: scPopIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-origin: top left;
+    }
+    .sc-datepicker-popover.show { display: block; }
+
+    @keyframes scPopIn {
+        from { opacity: 0; transform: scale(0.95) translateY(-5px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .calendar-top {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+    }
+    .calendar-selectors { display: flex; gap: 5px; }
+    .calendar-select {
+        border: 1px solid #e5e7eb; background: #fff; padding: 6px 10px; border-radius: 8px;
+        font-size: 12px; font-weight: 700; color: var(--primary-blue); cursor: pointer;
+    }
+    .calendar-nav-btns { display: flex; gap: 4px; }
+    .calendar-nav-btn {
+        width: 32px; height: 32px; border-radius: 8px; background: #f1f5f9; border: none;
+        color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .calendar-nav-btn:hover { background: var(--primary-blue); color: white; }
+
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .calendar-day-head { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; padding-bottom: 10px; text-align: center; }
+    .calendar-day {
+        aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 10px; color: #334155; transition: 0.15s;
+    }
+    .calendar-day:hover:not(.empty) { background: var(--primary-blue-light); color: var(--primary-blue); font-weight: 700; }
+    .calendar-day.active { background: var(--primary-blue) !important; color: white !important; font-weight: 700; }
+    .calendar-day.today { box-shadow: inset 0 0 0 2px var(--primary-blue-light); color: var(--primary-blue); font-weight: 800; }
+
+    /* Layout de Resultados Optimizado */
+    .sc-results-container {
+        display: grid;
+        grid-template-columns: 32fr 68fr;
+        gap: 12px;
+        align-items: start;
+    }
+    .sc-tags-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    .sc-tag-compact {
+        font-size: 11px !important;
+        padding: 5px 4px !important;
+        text-align: center;
+        width: 100%;
+        margin: 0 !important;
+    }
+    .sc-block-compact {
+        padding: 16px !important;
+        margin: 0 !important;
+        height: 100%;
+    }
+    .sc-fail-list-compact {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+    .sc-fail-list-compact::-webkit-scrollbar { width: 4px; }
+    .sc-fail-list-compact::-webkit-scrollbar-thumb { background: #fee2e2; border-radius: 10px; }
+
+    /* Fila de descargas 50/50 */
+    .download-row-unified {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+    .download-mini-card {
+        padding: 10px 15px !important;
+        border-radius: 12px !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    /* --- Tutorial Styles Refined --- */
+    .sc-tour-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.05); z-index: 9000;
+        display: none; opacity: 0; transition: opacity 0.5s ease;
+        pointer-events: auto;
+    }
+    .sc-tour-overlay.show { display: block; opacity: 1; }
+    
+    .sc-tour-highlight {
+        position: absolute; z-index: 9001;
+        box-shadow: 0 0 0 9999px rgba(0, 10, 30, 0.4);
+        border: 3px solid var(--primary-blue);
+        border-radius: 16px; pointer-events: none;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box;
+    }
+    
+    .sc-tour-window {
+        position: absolute; width: 340px; background: white; border-radius: 20px;
+        padding: 28px; box-shadow: 0 25px 60px rgba(0, 30, 60, 0.25);
+        z-index: 9010; display: none; flex-direction: column; gap: 18px;
+        animation: tourFadeIn 0.3s ease-out;
+    }
+    @keyframes tourFadeIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    .sc-tour-title { font-size: 19px; font-weight: 900; color: #0066b3; display: flex; align-items: center; gap: 12px; }
+    .sc-tour-text { font-size: 14px; color: #475569; line-height: 1.7; font-weight: 500; }
+    .sc-tour-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .sc-tour-dots { display: flex; gap: 4px; }
+    .sc-tour-dot { width: 6px; height: 6px; border-radius: 50%; background: #e5e7eb; }
+    .sc-tour-dot.active { background: var(--primary-blue); width: 15px; border-radius: 10px; }
+    
+    .btn-tour-next { background: var(--primary-blue); color: white; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    .btn-tour-skip { background: transparent; color: #94a3b8; border: none; font-weight: 600; cursor: pointer; font-size: 12px; }
+    
+    .btn-help-header {
+        position: absolute; top: 50%; transform: translateY(-50%); right: 25px;
+        background: rgba(255, 255, 255, 0.9); color: #0066b3; border: 1.5px solid #cbd5e1;
+        height: 34px; padding: 0 14px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer;
+        display: flex; align-items: center; gap: 6px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 9500; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .btn-help-header:hover { background: white; border-color: #0066b3; color: #0066b3; transform: translateY(-55%); }
+    .btn-help-header i { font-size: 15px; }
+</style>
 {% endblock %}
 
 {% block module_title %}
 <div class="module-header-title">
-    <span class="module-name">Seace</span>
+    <span class="module-name">SEACE</span>
     <span class="separator">|</span>
     <span class="module-desc">Inteligencia de Contrataciones</span>
 </div>
+<button class="btn-help-header" onclick="startTour()">
+    <i class="fa-solid fa-circle-question"></i>
+    TUTORIAL
+</button>
 {% endblock %}
 
 {% block content %}
-<div class="seace-wrapper">
-    <div class="seace-toolbar">
-        <div class="header-left">
-            <h1>Consulta Masiva de Contratos</h1>
-            <p>Inteligencia de Contrataciones - Portal SEACE (OSCE)</p>
-        </div>
-        <div class="header-actions">
-           <button class="btn-process" style="background: var(--primary-alt);" onclick="clearAll()">
-                <i data-lucide="trash-2" width="16"></i> Limpiar
-           </button>
+<div class="sc-page">
+    
+    <!-- Tutorial Overlay Elements -->
+    <div id="tour-overlay" class="sc-tour-overlay"></div>
+    <div id="tour-highlight" class="sc-tour-highlight" style="display:none;"></div>
+    <div id="tour-window" class="sc-tour-window">
+        <div class="sc-tour-title" id="tour-title"></div>
+        <div class="sc-tour-text" id="tour-text"></div>
+        <div class="sc-tour-footer">
+            <button class="btn-tour-skip" onclick="stopTour()">Saltar</button>
+            <div class="sc-tour-dots" id="tour-dots"></div>
+            <button class="btn-tour-next" id="tour-next-btn" onclick="nextTourStep()">Siguiente</button>
         </div>
     </div>
 
-    <div class="seace-main-grid">
-        <!-- Sidebar Panel -->
-        <div class="sidebar-panel">
-            <div class="section-title">
-                <i data-lucide="settings-2" width="18"></i> Parámetros de Búsqueda
-            </div>
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
-            <div class="form-group">
-                <label>RUCs de Proveedores (uno por línea)</label>
-                <textarea id="rucsInput" class="seace-textarea" placeholder="Ejemplo:&#10;20100000001&#10;20200000002"></textarea>
-            </div>
+    <!-- ===== LAYOUT PRINCIPAL: 2 columnas ===== -->
+    <div class="sc-grid">
 
-            <div class="form-group">
-                <label>O cargar archivo (Excel / TXT)</label>
-                <div class="file-input-wrapper">
-                    <i data-lucide="upload-cloud" width="24" style="color: #94a3b8; margin-bottom: 8px;"></i>
-                    <div class="file-info" id="fileStatus">Seleccionar archivo...</div>
-                    <input type="file" id="fileInput" accept=".txt,.xlsx,.xls" onchange="updateFileInfo()" />
-                </div>
-            </div>
+        <!-- ==========================================
+             COLUMNA IZQUIERDA — Configuración
+             ========================================== -->
+        <div class="sc-sidebar">
 
-            <div class="form-group">
-                <label>Fecha de Inicio (Vigencia)</label>
-                <input type="date" id="startDate" class="seace-textarea" style="min-height: auto; padding: 10px;" value="2025-12-01">
-            </div>
-
-            <button id="btnProcess" class="btn-process" onclick="startProcess()">
-                <i data-lucide="play" width="18"></i> Iniciar Procesamiento
-            </button>
-        </div>
-
-        <!-- Content Panel -->
-        <div class="content-panel">
-            <!-- Progress Card -->
-            <div id="progressCard" class="progress-card">
-                <div class="progress-header">
-                    <span class="progress-text" id="progressText">Procesando solicitudes...</span>
-                    <span class="progress-percent" id="progressPercent">0%</span>
-                </div>
-                <div class="progress-bar-bg">
-                    <div id="progressFill" class="progress-bar-fill"></div>
-                </div>
-            </div>
-
-            <!-- Summary Bar -->
-            <div id="summaryGrid" class="summary-grid" style="display: none;">
-                <div class="summary-box success">
-                    <span class="summary-label">Exitosos</span>
-                    <span class="summary-value" id="countSuccess">0</span>
-                </div>
-                <div class="summary-box error">
-                    <span class="summary-label">Fallidos</span>
-                    <span class="summary-value" id="countFailed">0</span>
-                </div>
-            </div>
-
-            <!-- Results List Card -->
-            <div class="results-card">
-                <div class="section-title">
-                    <i data-lucide="list" width="18"></i> Detalle por RUC
+            <!-- Card Principial: DIRECTORIO (Excel 1) -->
+            <div class="sc-card">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <h3>EXCEL 1: DIRECTORIO</h3>
                 </div>
                 
-                <div id="emptyState" class="empty-state">
-                    <i data-lucide="search" size="48"></i>
-                    <p>Los resultados del procesamiento aparecerán aquí.</p>
-                </div>
+                <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 20px; line-height: 1.5;">
+                    Carga el <b>Directorio / Consorcio</b> para realizar el cruce automático al finalizar la consulta.
+                </p>
 
-                <div id="resultsList" class="results-list" style="display: none;">
-                    <!-- Items mapped here -->
-                </div>
-
-                <div id="downloadArea" style="display: none; margin-top: auto; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
-                    <a id="downloadBtn" href="#" class="btn-process" style="background: var(--success-green); text-decoration: none;">
-                        <i data-lucide="download" width="18"></i> Descargar Reporte Excel
-                    </a>
+                <!-- Dropzone Directorio -->
+                <div class="sc-field">
+                    <div class="sc-dropzone" id="dropzone-cruce"
+                        onclick="document.getElementById('fileInputCruce').click()"
+                        style="padding: 20px 15px; border-width: 2px; background: #fafcff;">
+                        <i class="fa-solid fa-cloud-arrow-up sc-dropzone-icon" style="font-size: 28px; margin-bottom: 5px;"></i>
+                        <span class="sc-dropzone-text" id="labelFileCruce" style="font-size: 13px; font-weight: 700; color: var(--primary-blue);">
+                            Cargar Directorio
+                        </span>
+                        <input type="file" id="fileInputCruce" accept=".xlsx,.xls" hidden
+                            onchange="onFileCruceChange()">
+                    </div>
                 </div>
             </div>
+
+            <!-- Card: Parámetros y Búsqueda Manual -->
+            <div class="sc-card">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-sliders"></i>
+                    <h3>EXCEL 2: CONSULTA SEACE</h3>
+                </div>
+
+                <!-- Calendario Dropdown Popover (Intuitive & Compact) -->
+                <div class="sc-field">
+                    <div class="sc-field-label">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        VIGENCIA DESDE
+                    </div>
+                    
+                    <div class="sc-datepicker-container" id="datepicker-container">
+                        <!-- El Trigger que ahorra espacio -->
+                        <div class="sc-datepicker-trigger" id="datepicker-trigger" onclick="toggleCalendarPopover()">
+                            <span id="date-display-text" style="font-weight: 700; color: var(--text-dark);">Cargando...</span>
+                            <i class="fa-solid fa-calendar-alt"></i>
+                        </div>
+
+                        <!-- El Popover -->
+                        <div class="sc-datepicker-popover" id="datepicker-popover">
+
+                            <div class="calendar-top">
+                                <div class="calendar-selectors">
+                                    <select id="select-month" class="calendar-select" onchange="onSelectorChange()"></select>
+                                    <select id="select-year" class="calendar-select" onchange="onSelectorChange()"></select>
+                                </div>
+                                <div class="calendar-nav-btns">
+                                    <button type="button" class="calendar-nav-btn" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                                    <button type="button" class="calendar-nav-btn" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+
+                            <div id="calendar-grid" class="calendar-grid"></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="startDate" value="">
+                </div>
+
+                <!-- Cargar Lista de RUCs (Archivo) -->
+                <div class="sc-field" style="margin-top: 15px;">
+                    <div class="sc-field-label">
+                        <i class="fa-solid fa-file-invoice"></i>
+                        CARGAR LISTA RUCs (TXT/EXCEL)
+                    </div>
+                    <div class="sc-dropzone" id="dropzone-rucs"
+                        onclick="document.getElementById('fileInputRucs').click()"
+                        style="padding: 15px; border-style: solid; border-width: 1px; background: #f8fafc;">
+                        <i class="fa-solid fa-file-circle-plus sc-dropzone-icon" style="font-size: 18px; margin-bottom: 4px;"></i>
+                        <span class="sc-dropzone-text" id="labelFileRucs" style="font-size: 11px;">Clic para subir archivo</span>
+                        <input type="file" id="fileInputRucs" accept=".txt,.xlsx,.xls" hidden
+                            onchange="onFileRucsChange()">
+                    </div>
+                </div>
+
+                <!-- Búsqueda Manual (Oculto por defecto) -->
+                <div style="margin-top: 15px;">
+                    <button type="button" class="sc-toggle-btn" id="btn-toggle-manual" onclick="toggleManualSearch()">
+                        <span>Búsqueda Manual (Copiar/Pegar)</span>
+                        <i class="fa-solid fa-chevron-down" id="manual-toggle-icon"></i>
+                    </button>
+                    
+                    <div id="panel-manual-search" style="display: none; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                        <div class="sc-field">
+                            <div class="sc-field-label">
+                                <i class="fa-solid fa-keyboard"></i>
+                                PEGAR RUCs MANUALMENTE
+                            </div>
+                            <textarea id="rucsTextarea" class="sc-textarea" style="min-height: 120px;"
+                                placeholder="Ejemplo:&#10;20123456789"
+                                oninput="updateRucCount()"></textarea>
+                            <div id="rucCountBadge" style="font-size: 11px; font-weight: 700; color: var(--primary-blue); margin-top: 5px; text-align: right;">
+                                0 RUCs detectados
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="sc-actions">
+                <button class="sc-btn sc-btn-primary" id="btnProcess" onclick="startProcess()" style="height: 52px; font-size: 14px;">
+                    <i class="fa-solid fa-play"></i>
+                    <span id="btnProcessLabel">EJECUTAR CONSULTA SEACE</span>
+                </button>
+                <button class="sc-btn sc-btn-secondary" onclick="clearAll()">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Reiniciar Vista
+                </button>
+            </div>
+
+        </div>
+
+        <!-- ==========================================
+             COLUMNA DERECHA — Resultados
+             ========================================== -->
+        <div class="sc-content">
+
+            <!-- Card: Progreso -->
+            <div class="sc-card sc-progress-card" id="progressCard" style="display:none;">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-microchip"></i>
+                    <h3>PROCESANDO</h3>
+                    <span class="sc-pct" id="progressPercent">0%</span>
+                </div>
+                <div class="sc-progress-bar">
+                    <div class="sc-progress-fill" id="progressFill"></div>
+                </div>
+                <div class="sc-progress-detail" id="progressText">Consultando API de SEACE...</div>
+            </div>
+
+            <!-- Card: Resumen -->
+            <div class="sc-summary-row" id="summaryRow" style="display:none;">
+                <div class="sc-stat sc-stat-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <div class="sc-stat-data">
+                        <span class="sc-stat-val" id="countSuccess">0</span>
+                        <span class="sc-stat-label">Exitosos</span>
+                    </div>
+                </div>
+                <div class="sc-stat sc-stat-error">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <div class="sc-stat-data">
+                        <span class="sc-stat-val" id="countFailed">0</span>
+                        <span class="sc-stat-label">Inconvenientes</span>
+                    </div>
+                </div>
+                <div class="sc-stat sc-stat-info">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <div class="sc-stat-data">
+                        <span class="sc-stat-val" id="countTotal">0</span>
+                        <span class="sc-stat-label">Contratos</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card: Resultados -->
+            <div class="sc-card sc-results-card">
+                <div class="sc-card-header">
+                    <i class="fa-solid fa-list-check"></i>
+                    <h3>RESULTADOS</h3>
+                    <div class="sc-badge" id="resultsBadge" style="display:none;">0</div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="sc-empty">
+                    <div class="sc-empty-icon">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <h4>Sin resultados aún</h4>
+                    <p>Configura los parámetros en el panel izquierdo e inicia el procesamiento.</p>
+                </div>
+
+                <!-- Lista de resultados -->
+                <div id="resultsList" class="sc-results-list" style="display:none;">
+                    <!-- JS genera contenido aquí -->
+                </div>
+
+                <!-- Zona de Descargas Unificada (Dividida entre 2) -->
+                <div id="downloadSection" style="display:none; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #e5e7eb;">
+                    <div class="download-row-unified">
+                        <!-- Descarga 1: REPORTE SIMPLE -->
+                        <div id="downloadArea" class="download-mini-card" style="display:none; background: #f8fafc; border: 1px solid #e2e8f0;">
+                            <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Excel Simple</span>
+                            <a id="downloadBtn" href="#" class="sc-btn sc-btn-download" style="width: 100%; height: 38px; padding: 0; font-size: 12px; border-radius: 8px; margin: 0;">
+                                <i class="fa-solid fa-download"></i> Descargar
+                            </a>
+                        </div>
+
+                        <!-- Descarga 2: CRUCE PROFESIONAL -->
+                        <div id="downloadAreaCruce" class="download-mini-card" style="display:none; background: #ecfdf5; border: 1px solid #10b98133;">
+                            <span style="font-size: 10px; font-weight: 800; color: #059669; text-transform: uppercase; letter-spacing: 0.5px;">Excel + Directorio</span>
+                            <a id="downloadBtnCruce" href="#" class="sc-btn" style="width: 100%; height: 38px; padding: 0; font-size: 12px; border-radius: 8px; background: #059669; color: white; margin: 0;">
+                                <i class="fa-solid fa-bolt"></i> Descargar
+                            </a>
+                            <div id="cruceErrorMsg" style="display: none; font-size: 11px; color: #dc2626; font-weight: 600; line-height: 1.2; margin-top: 2px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -113,163 +438,641 @@
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        lucide.createIcons();
-    });
+    let currentMode = 'cruce'; 
+    let manualSearchVisible = false;
 
-    function updateFileInfo() {
-        const fileInput = document.getElementById('fileInput');
-        const fileStatus = document.getElementById('fileStatus');
-        if (fileInput.files.length > 0) {
-            fileStatus.innerHTML = `<strong>${fileInput.files[0].name}</strong> seleccionada`;
-            fileStatus.style.color = 'var(--primary-blue)';
+    // --- Tour Logic ---
+    let tourStep = 0;
+    let tourActive = false;
+    let tourOriginalState = {}; 
+
+    const tourData = [
+        {
+            target: ".sc-sidebar",
+            title: "Configuración Lateral",
+            text: "Desde aquí controlas toda la consulta. Puedes cargar archivos, elegir fechas y ver el panel de RUCs.",
+            pos: "right"
+        },
+        {
+            target: "#dropzone-cruce",
+            title: "1. Directorio Base",
+            text: "Sube aquí tu Excel de Directorio o Consorcio. El sistema lo usará para cruzar los datos automáticamente al final.",
+            pos: "right"
+        },
+        {
+            target: ".sc-datepicker-container",
+            title: "Vigencia desde...",
+            text: "Selecciona desde qué fecha quieres buscar contratos. Por defecto está configurado desde 2025.",
+            pos: "right"
+        },
+        {
+            target: "#btnProcess",
+            title: "¡Inicia la Consulta!",
+            text: "Una vez configuardo todo, dale click aquí para que el sistema busque en la API de SEACE en tiempo real.",
+            pos: "right"
+        },
+        {
+            target: ".sc-summary-row",
+            title: "Panel de Resumen",
+            text: "Aquí verás el conteo rápido: cuántos RUCs fueron exitosos, cuáles tuvieron inconvenientes y el total de contratos encontrados.",
+            pos: "bottom",
+            simulate: "summary"
+        },
+        {
+            target: ".sc-results-card",
+            title: "Resultados Detallados",
+            text: "Aquí aparecerá la lista de RUCs. La columna izquierda muestra los éxitos y la derecha los inconvenientes con sus motivos específicos.",
+            pos: "bottom",
+            simulate: "results"
+        },
+        {
+            target: "#downloadSection",
+            title: "Descarga tus Reportes",
+            text: "¡Lo más importante! Aquí podrás bajar el Excel normal o el 'Cruce Profesional' ya procesado con tus datos del Directorio.",
+            pos: "top",
+            simulate: "downloads"
+        }
+    ];
+
+    function startTour() {
+        tourStep = 0;
+        tourActive = true;
+        
+        // Backup actual UI state
+        tourOriginalState = {
+            summary: document.getElementById('summaryRow').style.display,
+            list: document.getElementById('resultsList').style.display,
+            empty: document.getElementById('emptyState').style.display,
+            downloads: document.getElementById('downloadSection').style.display,
+            countS: document.getElementById('countSuccess').textContent,
+            countF: document.getElementById('countFailed').textContent,
+            countT: document.getElementById('countTotal').textContent,
+            listHTML: document.getElementById('resultsList').innerHTML
+        };
+
+        document.getElementById('tour-overlay').classList.add('show');
+        document.getElementById('tour-highlight').style.display = 'block';
+        document.getElementById('tour-window').style.display = 'flex';
+        showTourStep();
+    }
+
+    function stopTour() {
+        tourActive = false;
+        document.getElementById('tour-overlay').classList.remove('show');
+        document.getElementById('tour-highlight').style.display = 'none';
+        document.getElementById('tour-window').style.display = 'none';
+
+        // Restore UI state
+        document.getElementById('summaryRow').style.display = tourOriginalState.summary;
+        document.getElementById('resultsList').style.display = tourOriginalState.list;
+        document.getElementById('emptyState').style.display = tourOriginalState.empty;
+        document.getElementById('downloadSection').style.display = tourOriginalState.downloads;
+        
+        document.getElementById('countSuccess').textContent = tourOriginalState.countS;
+        document.getElementById('countFailed').textContent = tourOriginalState.countF;
+        document.getElementById('countTotal').textContent = tourOriginalState.countT;
+        document.getElementById('resultsList').innerHTML = tourOriginalState.listHTML;
+    }
+
+    function nextTourStep() {
+        tourStep++;
+        if (tourStep >= tourData.length) {
+            stopTour();
+        } else {
+            showTourStep();
         }
     }
 
-    function clearAll() {
-        document.getElementById('rucsInput').value = '';
-        document.getElementById('fileInput').value = '';
-        document.getElementById('fileStatus').innerText = 'Seleccionar archivo...';
-        document.getElementById('fileStatus').style.color = '#64748b';
-        document.getElementById('summaryGrid').style.display = 'none';
-        document.getElementById('resultsList').style.display = 'none';
-        document.getElementById('downloadArea').style.display = 'none';
-        document.getElementById('emptyState').style.display = 'flex';
-        document.getElementById('progressCard').style.display = 'none';
+    function showTourStep() {
+        const step = tourData[tourStep];
+        
+        // Simulation logic
+        if (step.simulate === "summary") {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('summaryRow').style.display = 'flex';
+            document.getElementById('countSuccess').textContent = "14";
+            document.getElementById('countFailed').textContent = "13";
+            document.getElementById('countTotal').textContent = "49";
+        } else if (step.simulate === "results") {
+             document.getElementById('resultsList').style.display = 'block';
+             if (!document.getElementById('resultsGrid') || tourActive) {
+                renderResults({
+                    success_count: 14,
+                    failed_count: 13,
+                    count: 49,
+                    success_rucs: ["20104174023","20445671135","20549322434","20344483782","20444534932","20488625954"],
+                    failed_rucs: [
+                        {ruc: "20534025927", reason: "[CONSORCIO VIAL] Sin contratos en el rango de fecha"},
+                        {ruc: "20534025927", reason: "[CONSORCIO VIAL] Sin contratos en el rango de fecha"}
+                    ]
+                });
+             }
+        } else if (step.simulate === "downloads") {
+            document.getElementById('downloadSection').style.display = 'flex';
+            document.getElementById('downloadArea').style.display = 'flex';
+            document.getElementById('downloadAreaCruce').style.display = 'flex';
+        }
+
+        const targetEl = document.querySelector(step.target);
+        if (!targetEl) { nextTourStep(); return; }
+
+        // Let simulation render before measuring
+        setTimeout(() => {
+            const rect = targetEl.getBoundingClientRect();
+            const highlight = document.getElementById('tour-highlight');
+            const win = document.getElementById('tour-window');
+            
+            // Ultra-precise calculation
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+            
+            // Back to beautiful fixed rounded corners
+            highlight.style.borderRadius = '20px';
+            
+            // Increased offset for a spaced-out premium look
+            const offset = 6; 
+            highlight.style.top = (rect.top + scrollY - offset) + 'px';
+            highlight.style.left = (rect.left + scrollX - offset) + 'px';
+            highlight.style.width = (rect.width + offset * 2) + 'px';
+            highlight.style.height = (rect.height + offset * 2) + 'px';
+
+            document.getElementById('tour-title').innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> ${step.title}`;
+            document.getElementById('tour-text').textContent = step.text;
+            document.getElementById('tour-next-btn').textContent = (tourStep === tourData.length - 1) ? "Finalizar" : "Siguiente";
+
+            const dots = document.getElementById('tour-dots');
+            dots.innerHTML = tourData.map((_, i) => `<div class="sc-tour-dot ${i === tourStep ? 'active' : ''}"></div>`).join('');
+
+            const winWidth = 340;
+            const margin = 20;
+
+            // Smart positioning to avoid screen edges
+            let leftPos = rect.right + margin;
+            if (step.pos === "right") {
+                if (leftPos + winWidth > window.innerWidth) {
+                    leftPos = rect.left - winWidth - margin;
+                }
+                win.style.left = leftPos + 'px';
+                win.style.top = (rect.top + scrollY) + 'px';
+            } else if (step.pos === "bottom") {
+                leftPos = rect.left + rect.width/2 - winWidth/2;
+                if (leftPos < 10) leftPos = 10;
+                if (leftPos + winWidth > window.innerWidth) leftPos = window.innerWidth - winWidth - 10;
+                win.style.left = leftPos + 'px';
+                win.style.top = (rect.bottom + scrollY + margin) + 'px';
+            } else if (step.pos === "top") {
+                leftPos = rect.left + rect.width/2 - winWidth/2;
+                if (leftPos < 10) leftPos = 10;
+                if (leftPos + winWidth > window.innerWidth) leftPos = window.innerWidth - winWidth - 10;
+                win.style.left = leftPos + 'px';
+                const winHeight = win.offsetHeight || 220;
+                win.style.top = (rect.top + scrollY - winHeight - margin) + 'px';
+            }
+
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 60);
     }
 
-    async function startProcess() {
-        const rucsText = document.getElementById('rucsInput').value.trim();
-        const fileInput = document.getElementById('fileInput');
-        const startDate = document.getElementById('startDate').value;
-        const btn = document.getElementById('btnProcess');
-        
-        const progressCard = document.getElementById('progressCard');
-        const progressFill = document.getElementById('progressFill');
-        const progressPercent = document.getElementById('progressPercent');
-        
-        const summaryGrid = document.getElementById('summaryGrid');
-        const emptyState = document.getElementById('emptyState');
-        const resultsList = document.getElementById('resultsList');
-        const downloadArea = document.getElementById('downloadArea');
+    // --- Calendario Logic Premium (Inline & Snappy) ---
+    let calendarViewDate = new Date(); 
+    let selectedDate = new Date(); 
+    const monthsFull = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-        if (!rucsText && fileInput.files.length === 0) {
-            alert("Por favor ingrese RUCs o seleccione un archivo.");
+    document.addEventListener('DOMContentLoaded', () => {
+        initSelectors();
+        renderCalendar();
+        updateDateInput();
+
+        // Cerrar al hacer click fuera
+        window.addEventListener('click', (e) => {
+            const container = document.getElementById('datepicker-container');
+            const popover = document.getElementById('datepicker-popover');
+            if (container && !container.contains(e.target)) {
+                popover.classList.remove('show');
+            }
+        });
+    });
+
+    function toggleCalendarPopover() {
+        const popover = document.getElementById('datepicker-popover');
+        if(popover) popover.classList.toggle('show');
+    }
+
+    function initSelectors() {
+        const sm = document.getElementById('select-month');
+        const sy = document.getElementById('select-year');
+        if(!sm || !sy) return;
+
+        monthsFull.forEach((m, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = m;
+            sm.appendChild(opt);
+        });
+
+        const currentYear = new Date().getFullYear();
+        const startYear = 2025;
+        for (let y = startYear; y <= currentYear + 2; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            sy.appendChild(opt);
+        }
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        const sm = document.getElementById('select-month');
+        const sy = document.getElementById('select-year');
+        if(!grid) return;
+        grid.innerHTML = '';
+
+        const year = calendarViewDate.getFullYear();
+        const month = calendarViewDate.getMonth();
+        
+        if(sm) sm.value = month;
+        if(sy) sy.value = year;
+
+        ['D', 'L', 'M', 'M', 'J', 'V', 'S'].forEach(d => {
+            const div = document.createElement('div');
+            div.className = 'calendar-day-head';
+            div.textContent = d;
+            grid.appendChild(div);
+        });
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) {
+            const div = document.createElement('div');
+            div.className = 'calendar-day empty';
+            grid.appendChild(div);
+        }
+
+        const today = new Date();
+        for (let d = 1; d <= daysInMonth; d++) {
+            const div = document.createElement('div');
+            div.className = 'calendar-day';
+            div.textContent = d;
+            const thisDate = new Date(year, month, d);
+            
+            if (thisDate.toDateString() === today.toDateString()) div.classList.add('today');
+            if (thisDate.toDateString() === selectedDate.toDateString()) div.classList.add('active');
+
+            div.onclick = (e) => {
+                e.stopPropagation();
+                selectedDate = new Date(year, month, d);
+                updateDateInput();
+                renderCalendar();
+                const popover = document.getElementById('datepicker-popover');
+                if(popover) popover.classList.remove('show');
+            };
+            grid.appendChild(div);
+        }
+    }
+
+    function onSelectorChange() {
+        const m = parseInt(document.getElementById('select-month').value);
+        const y = parseInt(document.getElementById('select-year').value);
+        calendarViewDate.setFullYear(y);
+        calendarViewDate.setMonth(m);
+        renderCalendar();
+    }
+
+    function changeMonth(step) {
+        calendarViewDate.setMonth(calendarViewDate.getMonth() + step);
+        renderCalendar();
+    }
+
+    function updateDateInput() {
+        const y = selectedDate.getFullYear();
+        const m = selectedDate.getMonth();
+        const d = selectedDate.getDate();
+        
+        const label = `${d} de ${monthsFull[m]}, ${y}`;
+        const displayText = document.getElementById('date-display-text');
+        if(displayText) displayText.textContent = label;
+        
+        const val = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const input = document.getElementById('startDate');
+        if(input) input.value = val;
+    }
+
+    function toggleManualSearch() {
+        manualSearchVisible = !manualSearchVisible;
+        const panel = document.getElementById('panel-manual-search');
+        const icon = document.getElementById('manual-toggle-icon');
+        const btn = document.getElementById('btn-toggle-manual');
+        
+        if (manualSearchVisible) {
+            panel.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+            btn.classList.add('active');
+            currentMode = 'consulta';
+        } else {
+            panel.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+            btn.classList.remove('active');
+            if (document.getElementById('fileInputCruce').files[0]) {
+                currentMode = 'cruce';
+            }
+        }
+    }
+
+    /* ============================================================
+       ARCHIVOS
+       ============================================================ */
+    function onFileCruceChange() {
+        const f = document.getElementById('fileInputCruce').files[0];
+        const label = document.getElementById('labelFileCruce');
+        const zone = document.getElementById('dropzone-cruce');
+        if (f) {
+            label.textContent = f.name;
+            zone.classList.add('has-file');
+            currentMode = 'cruce'; 
+            showToast('Excel Base cargado.', 'success');
+        } else {
+            label.textContent = 'Cargar Excel Base';
+            zone.classList.remove('has-file');
+        }
+    }
+
+    function onFileRucsChange() {
+        const f = document.getElementById('fileInputRucs').files[0];
+        const label = document.getElementById('labelFileRucs');
+        const zone = document.getElementById('dropzone-rucs');
+        if (f) {
+            label.textContent = f.name;
+            zone.classList.add('has-file');
+            currentMode = 'consulta'; 
+            showToast('Lista de RUCs cargada.', 'success');
+        } else {
+            label.textContent = 'Clic para subir archivo';
+            zone.classList.remove('has-file');
+        }
+    }
+
+    function onFileProfChange(id) {
+        const f = document.getElementById(`fileProf${id}`).files[0];
+        const label = document.getElementById(`labelProf${id}`);
+        const zone = document.getElementById(`dropzone-prof${id}`);
+        if (f) {
+            label.textContent = f.name;
+            zone.classList.add('has-file');
+            showToast(`Archivo ${id} cargado.`, 'success');
+        } else {
+            label.textContent = (id === 1 ? '1. Cargar Directorio' : '2. Cargar Reporte SEACE');
+            zone.classList.remove('has-file');
+        }
+    }
+
+    function updateRucCount() {
+        const text = document.getElementById('rucsTextarea').value;
+        const count = text.split('\n').filter(line => line.trim().length === 11 && /^\d+$/.test(line.trim())).length;
+        document.getElementById('rucCountBadge').textContent = `${count} RUCs detectados`;
+    }
+
+    /* ============================================================
+       LIMPIAR
+       ============================================================ */
+    function clearAll() {
+        document.getElementById('rucsTextarea').value = '';
+        document.getElementById('rucCountBadge').textContent = '0 RUCs detectados';
+        document.getElementById('fileInputCruce').value = '';
+        document.getElementById('fileInputRucs').value = '';
+        
+        document.getElementById('labelFileCruce').textContent = 'Cargar Excel Base';
+        document.getElementById('labelFileRucs').textContent = 'Clic para subir archivo';
+        
+        ['cruce', 'rucs'].forEach(id => {
+            const zone = document.getElementById(`dropzone-${id}`);
+            if(zone) zone.classList.remove('has-file');
+        });
+
+        // Reset calendario a hoy
+        selectedDate = new Date();
+        calendarViewDate = new Date();
+        updateDateInput();
+        renderCalendar();
+        
+        if (manualSearchVisible) toggleManualSearch();
+        resetResults();
+        showToast('Vista reiniciada.', 'info');
+    }
+
+
+    function resetResults() {
+        document.getElementById('summaryRow').style.display = 'none';
+        document.getElementById('resultsList').style.display = 'none';
+        document.getElementById('downloadSection').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'flex';
+        document.getElementById('progressCard').style.display = 'none';
+        document.getElementById('resultsBadge').style.display = 'none';
+    }
+
+    /* ============================================================
+       PROCESAR
+       ============================================================ */
+    async function startProcess() {
+        const btn = document.getElementById('btnProcess');
+        const label = document.getElementById('btnProcessLabel');
+
+        const rucsText = document.getElementById('rucsTextarea').value.trim();
+        const fileCruce = document.getElementById('fileInputCruce').files[0];
+        const fileRucs = document.getElementById('fileInputRucs').files[0];
+        const startDate = document.getElementById('startDate').value;
+
+        // Validaciones
+        if (!rucsText && !fileRucs && !fileCruce) {
+            showToast('Ingrese RUCs o suba un archivo (Directorio o Lista).', 'warning');
             return;
         }
 
-        // UI Reset
+        // UI: Loading
         btn.disabled = true;
-        btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Procesando...`;
-        lucide.createIcons();
-        
-        progressCard.style.display = 'block';
-        progressFill.style.width = '10%';
-        progressPercent.innerText = '10%';
-        
-        summaryGrid.style.display = 'none';
-        emptyState.style.display = 'none';
-        resultsList.style.display = 'none';
-        downloadArea.style.display = 'none';
+        label.textContent = 'PROCESANDO SEACE...';
+        btn.querySelector('i').className = 'fa-solid fa-sync fa-spin';
 
-        // Prepare Data
-        const formData = new FormData();
-        if (rucsText) formData.append('rucs', rucsText);
-        if (fileInput.files.length > 0) formData.append('file', fileInput.files[0]);
-        formData.append('start_date', startDate);
+        document.getElementById('progressCard').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'none';
+        resetResults();
+
+        const fill = document.getElementById('progressFill');
+        const pct = document.getElementById('progressPercent');
+        fill.style.width = '0%'; pct.textContent = '0%';
+
+        let p = 0;
+        const interval = setInterval(() => {
+            if (p < 92) {
+                p += Math.random() * 3;
+                fill.style.width = Math.round(p) + '%';
+                pct.textContent = Math.round(p) + '%';
+            }
+        }, 400);
+
+        // FormData
+        const fd = new FormData();
+        if (fileCruce) fd.append('file_cruce', fileCruce);
+        if (fileRucs) fd.append('file', fileRucs);
+        if (rucsText) fd.append('rucs', rucsText);
+        fd.append('start_date', startDate);
 
         try {
-            // Fake progress interval while waiting for response
-            let p = 10;
-            const interval = setInterval(() => {
-                if (p < 90) {
-                    p += 2;
-                    progressFill.style.width = p + '%';
-                    progressPercent.innerText = p + '%';
-                }
-            }, 300);
-
-            const response = await fetch('/seace/process', {
-                method: 'POST',
-                body: formData
-            });
-
+            const res = await fetch('/seace/process', { method: 'POST', body: fd });
             clearInterval(interval);
-            progressFill.style.width = '100%';
-            progressPercent.innerText = '100%';
+            
+            const data = await res.json();
+            if (!res.ok || data.status === 'error') throw new Error(data.message || 'Error en el servidor');
 
-            if (!response.ok) throw new Error("Error en el servidor");
+            fill.style.width = '100%';
+            pct.textContent = '100%';
 
-            const data = await response.json();
+            setTimeout(() => {
+                document.getElementById('progressCard').style.display = 'none';
+                renderResults(data);
+            }, 600);
 
-            if (data.status === 'success') {
-                // Update Summary
-                document.getElementById('countSuccess').innerText = data.success_count;
-                document.getElementById('countFailed').innerText = data.failed_count;
-                summaryGrid.style.display = 'grid';
-
-                // Update List
-                resultsList.innerHTML = '';
-                
-                // 1. Success Summary Card (Verde - Siempre arriba si hay éxitos)
-                if (data.success_count > 0) {
-                    const successText = data.success_count === 1 
-                        ? "1 RUC procesado exitosamente" 
-                        : `${data.success_count} RUCs procesados exitosamente`;
-                        
-                    resultsList.innerHTML += `
-                        <div class="result-item" style="background: #f0fdf4; border-left: 5px solid #22c55e; margin-bottom: 15px; flex-direction: column; align-items: flex-start; padding: 15px;">
-                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                                <i data-lucide="check-circle" style="color: #22c55e;"></i>
-                                <span class="result-ruc" style="color: #166534;">Lote de Procesamiento</span>
-                                <span class="result-status status-valid">${successText}</span>
-                            </div>
-                            <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; width: 100%;">
-                                ${(data.success_rucs || []).map(ruc => `<span title="Procesado OK" style="background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid #bbf7d0;">${ruc}</span>`).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // 2. Failed RUCs (Rojo - Individuales para revisión)
-                if (data.failed_count > 0) {
-                    const errorHeader = document.createElement('div');
-                    errorHeader.className = 'section-title';
-                    errorHeader.style.fontSize = '14px';
-                    errorHeader.style.marginTop = '10px';
-                    errorHeader.style.marginBottom = '10px';
-                    errorHeader.style.color = '#ef4444';
-                    errorHeader.innerHTML = `<i data-lucide="alert-circle" width="16"></i> RUCs con inconvenientes (${data.failed_count})`;
-                    resultsList.appendChild(errorHeader);
-
-                    data.failed_rucs.forEach(item => {
-                        resultsList.innerHTML += `
-                            <div class="result-item" style="border-left: 5px solid #ef4444; margin-bottom: 8px; padding: 10px 15px;">
-                                <span class="result-ruc" style="font-weight: 600;">${item.ruc}</span>
-                                <span class="result-status status-invalid">${item.reason}</span>
-                            </div>
-                        `;
-                    });
-                }
-
-                resultsList.style.display = 'flex';
-                downloadArea.style.display = 'block';
-                document.getElementById('downloadBtn').href = data.download_url;
-                
-            } else {
-                alert("Error: " + data.message);
-                emptyState.style.display = 'flex';
-            }
-
-        } catch (error) {
-            alert("Error crítico: " + error.message);
-            emptyState.style.display = 'flex';
+        } catch (err) {
+            clearInterval(interval);
+            document.getElementById('progressCard').style.display = 'none';
+            showToast(err.message, 'error');
+            document.getElementById('emptyState').style.display = 'flex';
         } finally {
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="play" width="18"></i> Iniciar Procesamiento`;
-            progressCard.style.display = 'none';
-            lucide.createIcons();
+            label.textContent = 'EJECUTAR CONSULTA SEACE';
+            btn.querySelector('i').className = 'fa-solid fa-play';
         }
+    }
+
+    /* ============================================================
+       RENDER RESULTADOS
+       ============================================================ */
+    function renderResults(data) {
+        document.getElementById('emptyState').style.display = 'none';
+        const list = document.getElementById('resultsList');
+        list.style.display = 'block'; // Usar block para el contenedor grid interno
+        list.innerHTML = `<div class="sc-results-container" id="resultsGrid"></div>`;
+        const grid = document.getElementById('resultsGrid');
+
+        // Stats
+        document.getElementById('countSuccess').textContent = data.success_count || 0;
+        document.getElementById('countFailed').textContent = data.failed_count || 0;
+        document.getElementById('countTotal').textContent = data.count || 0;
+        document.getElementById('summaryRow').style.display = 'flex';
+
+        // Badge
+        const badge = document.getElementById('resultsBadge');
+        badge.textContent = data.count || 0;
+        badge.style.display = 'flex';
+
+        // 1. Éxitos (Grid 2xN)
+        let successHTML = '';
+        if (data.success_count > 0) {
+            const tags = (data.success_rucs || []).map(r => `<span class="sc-tag sc-tag-ok sc-tag-compact">${r}</span>`).join('');
+            successHTML = `
+                <div class="sc-result-block sc-block-ok sc-block-compact">
+                    <div class="sc-block-head" style="margin-bottom: 8px;">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span style="font-size: 11px;">${data.success_count} Exitosos</span>
+                    </div>
+                    <div class="sc-tags-grid">${tags}</div>
+                </div>`;
+        } else {
+            successHTML = `<div class="sc-result-block sc-block-ok sc-block-compact" style="opacity: 0.5; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #059669;">Sin éxitos</div>`;
+        }
+
+        // 2. Errores (Lista Compacta)
+        let failHTML = '';
+        if (data.failed_count > 0) {
+            const rucCounts = {};
+            (data.failed_rucs || []).forEach(item => rucCounts[item.ruc] = (rucCounts[item.ruc] || 0) + 1);
+
+            const rows = (data.failed_rucs || []).map(item => {
+                const isRepeated = rucCounts[item.ruc] > 1;
+                let consorcio = "";
+                let motivo = item.reason;
+                const match = item.reason.match(/^\[(.*?)\] (.*)$/);
+                if (match) { consorcio = match[1]; motivo = match[2]; }
+
+                return `
+                <div class="sc-fail-row" style="display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #fee2e2; align-items: center; font-size: 12px;">
+                    <span style="font-family: monospace; font-weight: 700; color: #b91c1c; font-size: 12px; min-width: 95px;">${item.ruc}</span>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                        ${isRepeated ? `<span style="background: #ef4444; color: white; font-size: 10px; padding: 1px 5px; border-radius: 4px; font-weight: 800; flex-shrink: 0;">REPETIDO</span>` : ''}
+                        <span style="color: #1e293b; font-weight: 800; font-size: 12px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width: 280px; flex-shrink: 0;">${consorcio || 'Directorio'}</span>
+                        <span style="color: #b91c1c; opacity: 0.8; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">— ${motivo}</span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            failHTML = `
+                <div class="sc-result-block sc-block-err sc-block-compact">
+                    <div class="sc-block-head" style="margin-bottom: 8px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span style="font-size: 11px;">Inconvenientes (${data.failed_count})</span>
+                    </div>
+                    <div class="sc-fail-list-compact">${rows}</div>
+                </div>`;
+        } else {
+            failHTML = `<div class="sc-result-block sc-block-err sc-block-compact" style="opacity: 0.5; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #b91c1c;">Sin errores</div>`;
+        }
+
+        grid.innerHTML = successHTML + failHTML;
+
+        // Áreas de Descarga
+        const section = document.getElementById('downloadSection');
+        const areaNormal = document.getElementById('downloadArea');
+        const areaCruce = document.getElementById('downloadAreaCruce');
+        
+        section.style.display = 'none';
+        areaNormal.style.display = 'none';
+        areaCruce.style.display = 'none';
+
+        if (data.download_url) {
+            document.getElementById('downloadBtn').href = data.download_url;
+            section.style.display = 'flex';
+            areaNormal.style.display = 'flex';
+        }
+
+        if (data.cruce_url) {
+            document.getElementById('downloadBtnCruce').href = data.cruce_url;
+            document.getElementById('downloadBtnCruce').style.display = 'flex';
+            section.style.display = 'flex';
+            areaCruce.style.display = 'flex';
+            document.getElementById('cruceErrorMsg').style.display = 'none';
+        } else if (data.cruce_error) {
+            section.style.display = 'flex';
+            areaCruce.style.display = 'flex';
+            document.getElementById('downloadBtnCruce').style.display = 'none';
+            document.getElementById('cruceErrorMsg').textContent = data.cruce_error;
+            document.getElementById('cruceErrorMsg').style.display = 'block';
+        }
+
+        showToast(`Listo — Consulta finalizada.`, 'success');
+    }
+
+    /* ============================================================
+       TOAST NOTIFICATIONS
+       ============================================================ */
+    function showToast(message, type = 'info') {
+        const icons = {
+            success: 'fa-circle-check',
+            error: 'fa-circle-xmark',
+            warning: 'fa-triangle-exclamation',
+            info: 'fa-circle-info'
+        };
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <i class="fa-solid ${icons[type] || icons.info} toast-icon"></i>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('toast-exit');
+            setTimeout(() => toast.remove(), 350);
+        }, 4500);
     }
 </script>
 {% endblock %}

@@ -172,7 +172,6 @@
     </div>
 </div>
 
-<div id="toast" class="toast">¡Datos actualizados!</div>
 {% endblock %}
 
 {% block scripts %}
@@ -220,7 +219,7 @@
                     currentProcessedImages = msg.processed_images;
                     renderVisionGrid();
                 }
-                showToast("Nueva captura recibida");
+                showToast("Nueva captura recibida", "success");
             }
         };
     }
@@ -286,7 +285,7 @@
             const tr = document.getElementById(editingRowId);
             const num = tr.cells[0].innerText;
             tr.innerHTML = getRowHTML(num, data, editingRowId);
-            showToast("Registro actualizado");
+            showToast("Registro actualizado", "success");
         } else {
             addScanRow(data);
         }
@@ -404,11 +403,10 @@
         XLSX.writeFile(wb, "ScanDoc_Export.xlsx");
     }
 
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 3000);
+    function showToast(msg, type) {
+        if (window.showToast) {
+            window.showToast(msg, type || 'info');
+        }
     }
 
     initWebSocket();

@@ -102,6 +102,13 @@
 
 {% block scripts %}
 <script>
+// -- Toast Notification --
+function showToast(type, message) {
+    if (window.showToast) {
+        window.showToast(message, type);
+    }
+}
+
 // -- Constants --
 const TIPO_PLANTILLA_OPTIONS = [
   'CODIGO NO TRIBUTARIO',
@@ -557,10 +564,10 @@ function updateStats() {
 function generateDocuments() {
     const validRows = rows.filter(r => r.ruc || r.razonSocial || r.tipoPlantilla);
     if (validRows.length === 0) {
-        alert('No hay datos para generar documentos');
+        showToast('warning', 'No hay datos para generar documentos');
         return;
     }
-    alert(`Generando ${validRows.length} documento(s)...`);
+    showToast('info', `Generando ${validRows.length} documento(s)...`);
 }
 
 function downloadTemplate() {
@@ -593,7 +600,7 @@ function handleFileUpload(event) {
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
             if (jsonData.length === 0) {
-                alert('El archivo Excel está vacío');
+                showToast('warning', 'El archivo Excel está vacío');
                 return;
             }
 
@@ -630,10 +637,10 @@ function handleFileUpload(event) {
 
             rows = [...rows, ...importedRows];
             renderApp();
-            alert(`Se importaron ${importedRows.length} registro(s) exitosamente`);
+            showToast('success', `Se importaron ${importedRows.length} registro(s) exitosamente`);
         } catch (error) {
             console.error(error);
-            alert('Error al leer el archivo Excel.');
+            showToast('error', 'Error al leer el archivo Excel.');
         }
     };
     reader.readAsBinaryString(file);

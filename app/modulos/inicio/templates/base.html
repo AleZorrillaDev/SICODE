@@ -18,6 +18,7 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+
     {% block head_extra %}{% endblock %}
 </head>
 
@@ -108,7 +109,10 @@
         </div>
     </div>
 
-    <!-- Scripts Globales -->
+    <!-- Toast Notification (DataMask Style) -->
+    <div id="sicodeToast" class="sicode-toast">Listo</div>
+
+    <!-- Scripts Globales: se cargan ANTES que los módulos -->
     <script src="/static/js/main.js"></script>
 
     {% block scripts %}{% endblock %}

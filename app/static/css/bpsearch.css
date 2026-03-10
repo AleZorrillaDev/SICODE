@@ -816,48 +816,90 @@
     font-weight: 600;
 }
 
-/* Toasts */
+/* ===== TOAST NOTIFICATIONS (sistema global) ===== */
 #toast-container {
     position: fixed;
-    top: 20px;
+    top: 85px;
     right: 20px;
     z-index: 10000;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    pointer-events: none;
 }
 
 .toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     background: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 14px 18px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-out;
+    pointer-events: auto;
+    min-width: 280px;
+    max-width: 400px;
+}
+
+.toast-exit {
+    animation: slideOutRight 0.3s ease-out forwards;
+}
+
+.toast-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    flex: 1;
     font-family: 'Poppins', sans-serif;
     font-size: 14px;
-    color: #333;
-    border-left: 4px solid #333;
-    transform: translateX(120%);
-    transition: transform 0.3s ease;
+    font-weight: 500;
+    color: #1e3a5f;
 }
 
-.toast.show {
-    transform: translateX(0);
+.toast-close {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 14px;
+    transition: color 0.2s;
+    flex-shrink: 0;
 }
 
-.toast-success {
-    border-left-color: #4caf50;
+.toast-close:hover { color: #333; }
+
+.toast-success { border-left: 4px solid #2d8e5f; }
+.toast-error   { border-left: 4px solid #dc3545; }
+.toast-info    { border-left: 4px solid #0163ac; }
+.toast-warning { border-left: 4px solid #f59e0b; }
+
+.toast-success .toast-icon { color: #2d8e5f; }
+.toast-error   .toast-icon { color: #dc3545; }
+.toast-info    .toast-icon { color: #0163ac; }
+.toast-warning .toast-icon { color: #f59e0b; }
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
 }
 
-.toast-error {
-    border-left-color: #f44336;
+@keyframes slideOutRight {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(100%); opacity: 0; }
 }
 
-.toast-warning {
-    border-left-color: #ff9800;
-}
-
-.toast-info {
-    border-left-color: #2196f3;
+@media (max-width: 768px) {
+    #toast-container {
+        top: auto;
+        bottom: 20px;
+        right: 10px;
+        left: 10px;
+    }
+    .toast { min-width: auto; max-width: 100%; }
 }
 
 /* Modal */

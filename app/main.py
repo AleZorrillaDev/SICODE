@@ -18,6 +18,7 @@ from app.modulos.scandoc.router import router as scandoc_router
 from app.modulos.seace.router import router as seace_router
 from app.modulos.piloto.router import router as piloto_router
 from app.modulos.boletin.router import router as boletin_router
+from app.modulos.agregar.router import router as agregar_router
 
 # Importar modelos para que SQLAlchemy los detecte al crear la BD
 from app.modulos.auth import models as auth_models
@@ -84,6 +85,7 @@ app.include_router(scandoc_router)
 app.include_router(seace_router)
 app.include_router(piloto_router)
 app.include_router(boletin_router)
+app.include_router(agregar_router)
 
 if __name__ == "__main__":
     # Permite ejecutar el script directamente para desarrollo

@@ -173,7 +173,7 @@ const app = {
     },
 
     downloadPDF: function () {
-        alert("Funcionalidad de descarga PDF se implementará en el backend con WeasyPrint o similar.");
+        showToast("Funcionalidad de descarga PDF se implementará en el backend", "info");
     }
 };
 
@@ -198,3 +198,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+/**
+ * Global Toast Notification (DataMask Style)
+ * @param {string} message - Message to show
+ * @param {string} type - 'success', 'error', 'warning', or 'info'
+ */
+window.showToast = function(message, type) {
+    type = type || 'info';
+
+    // Get or create the toast element dynamically
+    let toast = document.getElementById('sicodeToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'sicodeToast';
+        document.body.appendChild(toast);
+    }
+
+    // Reset and apply type class
+    toast.className = 'sicode-toast';
+    if (type === 'success') toast.classList.add('toast-success');
+    else if (type === 'error') toast.classList.add('toast-error');
+    else if (type === 'warning') toast.classList.add('toast-warning');
+
+    // Icon map
+    var icons = {
+        success: '<i class="fa-solid fa-circle-check"></i>',
+        error:   '<i class="fa-solid fa-circle-exclamation"></i>',
+        warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
+        info:    '<i class="fa-solid fa-circle-info"></i>'
+    };
+
+    toast.innerHTML = (icons[type] || icons.info) + ' <span>' + message + '</span>';
+    toast.classList.add('visible');
+
+    // Auto-hide after 2.5s
+    if (window._toastTimeout) clearTimeout(window._toastTimeout);
+    window._toastTimeout = setTimeout(function() {
+        toast.classList.remove('visible');
+    }, 2500);
+};
+

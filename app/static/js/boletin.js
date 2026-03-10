@@ -195,6 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             addSearchResult(event);
                         } else if (event.type === 'complete') {
                             progressStatusText.textContent = "Búsqueda finalizada";
+                            const msg = foundCount > 0
+                                ? `${foundCount} coincidencia${foundCount > 1 ? 's' : ''} encontrada${foundCount > 1 ? 's' : ''}`
+                                : 'Sin coincidencias en los días seleccionados';
+                            showToast(foundCount > 0 ? 'success' : 'info', msg);
                             if (foundCount === 0) resultsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No se encontraron coincidencias</div>';
                         }
                     } catch(e) {}
@@ -338,22 +342,21 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (term) fragment = `#search="${encodeURIComponent(term)}"`;
         iframe.src = viewerUrl + fragment;
         iframe.onload = () => { viewportLoader.style.display = 'none'; viewControls.style.display = 'flex'; };
-        btnDownloadMain.onclick = () => window.location.href = `/boletin/api/download?url=${encodeURIComponent(pdf.url_online)}&fecha=${pdf.fecha}&titulo=${encodeURIComponent(pdf.titulo)}`;
-        btnOpenExternal.onclick = () => window.open(pdf.url_online, '_blank');
+        btnDownloadMain.onclick = () => {
+            window.location.href = `/boletin/api/download?url=${encodeURIComponent(pdf.url_online)}&fecha=${pdf.fecha}&titulo=${encodeURIComponent(pdf.titulo)}`;
+            showToast('info', 'Descargando boletín...');
+        };
+        btnOpenExternal.onclick = () => {
+            window.open(pdf.url_online, '_blank');
+            showToast('info', 'Abriendo en nueva pestaña...');
+        };
         pdfViewport.appendChild(iframe);
     }
 
     function showToast(type, message) {
-        const container = document.getElementById("toast-container");
-        const toast = document.createElement("div");
-        toast.className = `toast toast-${type}`;
-        toast.style.background = type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#10b981');
-        toast.style.color = 'white';
-        toast.style.padding = '12px 20px';
-        toast.style.borderRadius = '8px';
-        toast.style.marginBottom = '10px';
-        toast.textContent = message;
-        container.appendChild(toast);
-        setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = '0.3s'; setTimeout(() => toast.remove(), 300); }, 4000);
+        if (window.showToast) {
+            window.showToast(message, type);
+        }
     }
+
 });

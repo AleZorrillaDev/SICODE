@@ -221,13 +221,13 @@
                 lastReportFilename = result.reporte_excel;
                 
             } else {
-                alert("Error: " + result.message);
+                if (window.showToast) window.showToast("Error: " + result.message, "error");
                 emptyState.style.display = 'flex';
             }
 
         } catch (e) {
             console.error(e);
-            alert("Error crítico: " + e.message);
+            if (window.showToast) window.showToast("Error crítico: " + e.message, "error");
             emptyState.style.display = 'flex';
         } finally {
             btn.disabled = false;

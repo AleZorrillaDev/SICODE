@@ -196,7 +196,7 @@
 
     function downloadFile(type) {
         // Mock download
-        alert("Descargando archivo " + type + ".txt ...");
+        if (window.showToast) window.showToast("Descargando archivo " + type + ".txt ...", "info");
     }
 </script>
 {% endblock %}

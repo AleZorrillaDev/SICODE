@@ -94,15 +94,15 @@ const app = {
             if (!res.ok) throw new Error("API Response not OK");
 
             this.templates = await res.json();
-            this.renderCases(this.templates); // Renderiza la lista
+            this.renderCases(this.templates);
         } catch (err) {
             console.error(err);
-            // Fallback: Si falla el server, mostramos datos falsos para que la UI no se rompa
             this.templates = [
                 { name: 'Esquela_Generica.docx' },
                 { name: 'Carta_Inductiva_2024.docx' }
             ];
             this.renderCases(this.templates);
+            if (window.showToast) window.showToast('Servidor offline — usando plantillas de muestra', 'warning');
         }
     },
 
@@ -168,10 +168,12 @@ const app = {
             `;
 
             if (statusLabel) statusLabel.innerHTML = '<span class="status-dot" style="background: #10b981;"></span> Documento generado';
+            if (window.showToast) window.showToast('Vista previa generada', 'success');
 
         } catch (err) {
             console.error(err);
             if (statusLabel) statusLabel.innerHTML = '<span class="status-dot" style="background: #ef4444;"></span> Error vista previa (Mock Backend)';
+            if (window.showToast) window.showToast('No se pudo generar la vista previa', 'error');
         }
     },
 
@@ -188,7 +190,11 @@ const app = {
         if (missingFields.length > 0) {
             // Convertimos keys a nombres bonitos
             const fieldNames = missingFields.map(f => FIELD_LABELS[f] || f).join(', ');
-            alert(`⚠️ Campos incompletos:\n\n${fieldNames}`);
+            if (window.showToast) {
+                window.showToast(`Campos incompletos: ${fieldNames}`, 'error');
+            } else {
+                alert(`⚠️ Campos incompletos:\n\n${fieldNames}`);
+            }
             return;
         }
 
@@ -215,9 +221,14 @@ const app = {
             a.download = `Esquela_${this.state.formData.numero_esquela || 'doc'}.pdf`;
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a); // Limpieza DOM
+            document.body.removeChild(a);
+            if (window.showToast) window.showToast('PDF descargado correctamente', 'success');
         } catch (err) {
-            alert('Error descargando PDF (Backend Mock activo)');
+            if (window.showToast) {
+                window.showToast('Error descargando PDF (Backend Mock activo)', 'error');
+            } else {
+                alert('Error descargando PDF (Backend Mock activo)');
+            }
         }
     },
 
@@ -380,10 +391,10 @@ const app = {
             const data = await res.json();
 
             if (data.success) {
-                // Si encontramos datos, seteamos los campos automáticamente
                 this.setFieldValue('nombre', data.nombre);
                 this.setFieldValue('domicilio', data.domicilio);
                 if (data.ciudad) this.setFieldValue('ciudad', data.ciudad);
+                if (window.showToast) window.showToast('RUC encontrado: ' + data.nombre, 'success');
             } else {
                 // Fallback Local Database
                 if (this.mockRucDB[ruc]) {
@@ -481,6 +492,7 @@ const app = {
         this.renderForm(schema);
         this.generatePreview();
         this.goToStep(3);
+        if (window.showToast) window.showToast('Plantilla cargada: ' + template.name.replace('.docx',''), 'info');
     },
 
     goToStep: function (num) {

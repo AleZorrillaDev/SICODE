@@ -70,40 +70,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ===== TOAST NOTIFICATIONS =====
     function showToast(type, message) {
-        const container = document.getElementById("toast-container");
-        if (!container) return;
-
-        const toast = document.createElement("div");
-        toast.className = `toast toast-${type}`;
-
-        const icons = {
-            success: '<i class="fa-solid fa-check-circle"></i>',
-            error: '<i class="fa-solid fa-times-circle"></i>',
-            info: '<i class="fa-solid fa-info-circle"></i>',
-            warning: '<i class="fa-solid fa-exclamation-triangle"></i>'
-        };
-
-        toast.innerHTML = `
-            <span class="toast-icon">${icons[type] || icons.info}</span>
-            <span class="toast-message">${message}</span>
-            <button class="toast-close"><i class="fa-solid fa-times"></i></button>
-        `;
-
-        container.appendChild(toast);
-
-        // Auto cerrar después de 4 segundos
-        const autoClose = setTimeout(() => {
-            toast.classList.add("toast-exit");
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-
-        // Cerrar manualmente
-        toast.querySelector(".toast-close").addEventListener("click", () => {
-            clearTimeout(autoClose);
-            toast.classList.add("toast-exit");
-            setTimeout(() => toast.remove(), 300);
-        });
+        if (window.showToast) {
+            window.showToast(message, type);
+        }
     }
+
 
     // ===== DETECTAR CAMBIOS SIN GUARDAR =====
     const editableFields = [
@@ -328,7 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const resp = await fetch(`/doccheck/save/${currentIdx}`, { method: "POST", body: formData });
             const res = await resp.json();
             if (res.status === "success") {
-                showToast("success", "✓ Registro guardado correctamente");
+                showToast("success", "Guardado correctamente");
                 storeOriginalValues();
                 loadLastChange();  // Refrescar el badge
                 return true;

@@ -414,23 +414,10 @@ tbody tr:hover { background: #fcfdfe; }
 
 .modal-counter { color: #888; margin-top: 15px; font-size: 14px; }
 
-/* === TOAST === */
-.toast {
-    position: fixed;
-    bottom: 30px; right: 30px;
-    background: linear-gradient(135deg, var(--success), #059669);
-    color: white;
-    padding: 14px 24px;
-    border-radius: 50px;
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
-    font-weight: 600;
-    transform: translateY(150px);
-    opacity: 0;
-    transition: 0.4s;
-    z-index: 10000;
-}
-
-.toast.show { transform: translateY(0); opacity: 1; }
+/* === TOAST ===
+   El módulo ahora usa el sistema global de toast definido en styles.css
+   (clases .toast, .toast-success, .toast-exit, etc. con animaciones slide in/out)
+*/
 
 /* === MOBILE STYLES (PREMIUM OVERHAUL) === */
 .mobile-body {

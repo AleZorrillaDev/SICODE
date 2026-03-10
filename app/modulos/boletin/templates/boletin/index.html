@@ -370,6 +370,57 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+
+    /* --- Tutorial Styles Refined --- */
+    .sc-tour-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.05); z-index: 9000;
+        display: none; opacity: 0; transition: opacity 0.5s ease;
+        pointer-events: auto;
+    }
+    .sc-tour-overlay.show { display: block; opacity: 1; }
+    
+    .sc-tour-highlight {
+        position: absolute; z-index: 9001;
+        box-shadow: 0 0 0 9999px rgba(0, 10, 30, 0.4);
+        border: 3px solid #0066b3;
+        border-radius: 20px; pointer-events: none;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box;
+    }
+    
+    .sc-tour-window {
+        position: absolute; width: 340px; background: white; border-radius: 20px;
+        padding: 28px; box-shadow: 0 25px 60px rgba(0, 30, 60, 0.25);
+        z-index: 9010; display: none; flex-direction: column; gap: 18px;
+        animation: tourFadeIn 0.3s ease-out;
+    }
+    @keyframes tourFadeIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    .sc-tour-title { font-size: 19px; font-weight: 900; color: #0066b3; display: flex; align-items: center; gap: 12px; }
+    .sc-tour-text { font-size: 14px; color: #475569; line-height: 1.7; font-weight: 500; }
+    .sc-tour-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .sc-tour-dots { display: flex; gap: 4px; }
+    .sc-tour-dot { width: 6px; height: 6px; border-radius: 50%; background: #e5e7eb; }
+    .sc-tour-dot.active { background: #0066b3; width: 15px; border-radius: 10px; }
+    
+    .btn-tour-next { background: #0066b3; color: white; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    .btn-tour-skip { background: transparent; color: #94a3b8; border: none; font-weight: 600; cursor: pointer; font-size: 12px; }
+    
+    .btn-help-header {
+        position: absolute; top: 50%; transform: translateY(-50%); right: 25px;
+        background: rgba(255, 255, 255, 0.9); color: #0066b3; border: 1.5px solid #cbd5e1;
+        height: 34px; padding: 0 14px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer;
+        display: flex; align-items: center; gap: 6px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 9500; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .btn-help-header:hover { background: white; border-color: #0066b3; color: #0066b3; transform: translateY(-55%); }
+    .btn-help-header i { font-size: 15px; }
+
+    /* Tour Mode Helpers */
+    .tour-simulating > *:not(.sc-sim-item) { display: none !important; }
+    .sc-sim-item { display: flex !important; }
+    .sc-sim-viewer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #64748b; font-weight: 700; }
 </style>
 {% endblock %}
 
@@ -379,9 +430,26 @@
     <span class="separator">|</span>
     <span class="module-desc">Consulta Diario El Peruano</span>
 </div>
+<button class="btn-help-header" onclick="startTour()">
+    <i class="fa-solid fa-circle-question"></i>
+    TUTORIAL
+</button>
 {% endblock %}
 
 {% block content %}
+<!-- Tutorial Overlay Elements -->
+<div id="tour-overlay" class="sc-tour-overlay"></div>
+<div id="tour-highlight" class="sc-tour-highlight" style="display:none;"></div>
+<div id="tour-window" class="sc-tour-window">
+    <div class="sc-tour-title" id="tour-title"></div>
+    <div class="sc-tour-text" id="tour-text"></div>
+    <div class="sc-tour-footer">
+        <button class="btn-tour-skip" onclick="stopTour()">Saltar</button>
+        <div class="sc-tour-dots" id="tour-dots"></div>
+        <button class="btn-tour-next" id="tour-next-btn" onclick="nextTourStep()">Siguiente</button>
+    </div>
+</div>
+
 <div class="boletin-container">
     <!-- Panel Izquierdo -->
     <div class="side-panel">
@@ -472,11 +540,185 @@
     </div>
 </div>
 
-<!-- Toast -->
-<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
-
 {% endblock %}
 
 {% block scripts %}
 <script src="/static/js/boletin.js"></script>
+<script>
+    // --- Tour Logic Boletin ---
+    let tourStep = 0;
+    let tourActive = false;
+    let tourOriginalState = {}; 
+
+    const tourData = [
+        {
+            target: ".side-panel",
+            title: "Configuración y Filtros",
+            text: "Desde aquí puedes navegar entre fechas y buscar palabras clave dentro de los boletines oficiales.",
+            pos: "right"
+        },
+        {
+            target: ".card-boletin", // El primero es el calendario
+            title: "Calendario de Publicaciones",
+            text: "Haz click en un día para ver sus boletines. También puedes seleccionar rangos de fechas arrastrando o haciendo doble click.",
+            pos: "right"
+        },
+        {
+            target: "input#search-word",
+            title: "Buscador Predictivo",
+            text: "¿Buscas una resolución o nombre específico? Escríbelo aquí y el sistema revisará todos los archivos PDF por ti.",
+            pos: "right"
+        },
+        {
+            target: ".results-list",
+            title: "Lista de Publicaciones",
+            text: "Aquí aparecerán todos los boletines encontrados para la fecha o término buscado.",
+            pos: "right",
+            simulate: "results"
+        },
+        {
+            target: ".view-panel",
+            title: "Visor de PDF",
+            text: "Selecciona una publicación y se cargará aquí al instante para que la revises sin salir de SICODE.",
+            pos: "left",
+            simulate: "visor"
+        },
+        {
+            target: "#view-controls",
+            title: "Acciones de Documento",
+            text: "¿Lo necesitas físicamente? Puedes descargar el boletín o abrirlo en una pestaña nueva desde estos controles.",
+            pos: "bottom"
+        }
+    ];
+
+    function startTour() {
+        tourStep = 0;
+        tourActive = true;
+        
+        // Backup
+        tourOriginalState = {
+            count: document.getElementById('results-count').textContent,
+            controls: document.getElementById('view-controls').style.display
+        };
+
+        document.getElementById('tour-overlay').classList.add('show');
+        document.getElementById('tour-highlight').style.display = 'block';
+        document.getElementById('tour-window').style.display = 'flex';
+        showTourStep();
+    }
+
+    function stopTour() {
+        tourActive = false;
+        document.getElementById('tour-overlay').classList.remove('show');
+        document.getElementById('tour-highlight').style.display = 'none';
+        document.getElementById('tour-window').style.display = 'none';
+
+        // Non-destructive Restore
+        document.getElementById('results-count').textContent = tourOriginalState.count;
+        document.getElementById('view-controls').style.display = tourOriginalState.controls;
+        
+        // Remove simulated items without destroying real DOM
+        document.querySelectorAll('.sc-sim-item').forEach(el => el.remove());
+        document.getElementById('results-list').classList.remove('tour-simulating');
+        document.getElementById('pdf-viewport').classList.remove('tour-simulating');
+    }
+
+    function nextTourStep() {
+        tourStep++;
+        if (tourStep >= tourData.length) {
+            stopTour();
+        } else {
+            showTourStep();
+        }
+    }
+
+    function showTourStep() {
+        const step = tourData[tourStep];
+        
+        // Simulation logic: Use temporary nodes, never overwrite innerHTML of root containers
+        if (step.simulate === "results") {
+            const resultsList = document.getElementById('results-list');
+            resultsList.classList.add('tour-simulating');
+            document.getElementById('results-count').textContent = "1";
+            
+            if (!resultsList.querySelector('.sc-sim-item')) {
+                const item = document.createElement('div');
+                item.className = 'result-item selected sc-sim-item';
+                item.innerHTML = `
+                    <div class="result-info">
+                        <div class="result-title">BOLETÍN OFICIAL - SECCION 1 (SIMULADO)</div>
+                        <div class="result-meta"><i class="fa-regular fa-calendar"></i> 09 Mar 2026 • 24 Páginas</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color: #0066b3;"></i>
+                `;
+                resultsList.appendChild(item);
+            }
+        } else if (step.simulate === "visor") {
+            const viewport = document.getElementById('pdf-viewport');
+            viewport.classList.add('tour-simulating');
+            document.getElementById('view-controls').style.display = 'flex';
+
+            if (!viewport.querySelector('.sc-sim-item')) {
+                const simBox = document.createElement('div');
+                simBox.className = 'sc-sim-item sc-sim-viewer';
+                simBox.innerHTML = '[ DOCUMENTO DE EJEMPLO CARGADO ]';
+                viewport.appendChild(simBox);
+            }
+        }
+
+        const targetEl = document.querySelector(step.target);
+        if (!targetEl) { nextTourStep(); return; }
+
+        setTimeout(() => {
+            const rect = targetEl.getBoundingClientRect();
+            const highlight = document.getElementById('tour-highlight');
+            const win = document.getElementById('tour-window');
+            
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+            
+            highlight.style.borderRadius = '20px';
+            const offset = 6; 
+            highlight.style.top = (rect.top + scrollY - offset) + 'px';
+            highlight.style.left = (rect.left + scrollX - offset) + 'px';
+            highlight.style.width = (rect.width + offset * 2) + 'px';
+            highlight.style.height = (rect.height + offset * 2) + 'px';
+
+            document.getElementById('tour-title').innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> ${step.title}`;
+            document.getElementById('tour-text').textContent = step.text;
+            document.getElementById('tour-next-btn').textContent = (tourStep === tourData.length - 1) ? "Finalizar" : "Siguiente";
+
+            const dots = document.getElementById('tour-dots');
+            dots.innerHTML = tourData.map((_, i) => `<div class="sc-tour-dot ${i === tourStep ? 'active' : ''}"></div>`).join('');
+
+            const winWidth = 340;
+            const margin = 20;
+
+            let leftPos = rect.right + margin;
+            if (step.pos === "right") {
+                if (leftPos + winWidth > window.innerWidth) leftPos = rect.left - winWidth - margin;
+                win.style.left = leftPos + 'px';
+                win.style.top = (rect.top + window.scrollY) + 'px';
+            } else if (step.pos === "left") {
+                win.style.left = (rect.left - winWidth - margin) + 'px';
+                win.style.top = (rect.top + window.scrollY) + 'px';
+            } else if (step.pos === "bottom") {
+                leftPos = rect.left + rect.width/2 - winWidth/2;
+                if (leftPos < 10) leftPos = 10;
+                if (leftPos + winWidth > window.innerWidth) leftPos = window.innerWidth - winWidth - 10;
+                win.style.left = leftPos + 'px';
+                win.style.top = (rect.bottom + window.scrollY + margin) + 'px';
+            } else if (step.pos === "top") {
+                leftPos = rect.left + rect.width/2 - winWidth/2;
+                if (leftPos < 10) leftPos = 10;
+                if (leftPos + winWidth > window.innerWidth) leftPos = window.innerWidth - winWidth - 10;
+                win.style.left = leftPos + 'px';
+                const winHeight = win.offsetHeight || 220;
+                win.style.top = (rect.top + window.scrollY - winHeight - margin) + 'px';
+            }
+
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 80);
+    }
+</script>
 {% endblock %}

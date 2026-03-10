@@ -283,7 +283,7 @@
         const ria = document.getElementById('riaInput').value;
 
         if (!mem.deuda || !mem.pagos) {
-            alert("⚠️ Por favor cargue ambos archivos Excel.");
+            if (window.showToast) window.showToast("Por favor cargue ambos archivos Excel", "warning");
             return;
         }
 
@@ -307,10 +307,10 @@
                 lastSummary = res.summary;
                 renderResults(res);
             } else {
-                alert("Error: " + res.message);
+                if (window.showToast) window.showToast("Error: " + res.message, "error");
             }
         } catch (e) {
-            alert("Error crítico en el servidor.");
+            if (window.showToast) window.showToast("Error crítico en el servidor", "error");
         } finally {
             document.getElementById('loaderOverlay').style.display = 'none';
         }
